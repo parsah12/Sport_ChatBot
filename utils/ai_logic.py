@@ -1,7 +1,7 @@
 # utils/ai_logic.py
 import requests
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 def generate_plan(user_input):
     """
