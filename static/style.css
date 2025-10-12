@@ -1,0 +1,74 @@
+body {
+    background-color: #0f0f0f;
+    color: #fff;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* کانتینر اصلی چت */
+.main-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+    max-width: 900px;
+    margin: auto;
+    padding: 10px;
+}
+
+/* سربرگ بالا */
+.header {
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    color: #00ffcc;
+    padding: 20px;
+    border-bottom: 1px solid #222;
+}
+
+/* بخش چت */
+.chat-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* پیام‌ها */
+.msg {
+    padding: 14px 18px;
+    border-radius: 16px;
+    max-width: 75%;
+    line-height: 1.6;
+    animation: fadeIn 0.3s ease;
+}
+
+.msg.user {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #1f1f1f, #2f2f2f);
+    border: 1px solid #444;
+    color: #fff;
+}
+
+.msg.bot {
+    align-self: flex-start;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    color: #e5e5e5;
+}
+
+/* اسکرول */
+.chat-box::-webkit-scrollbar {
+    width: 8px;
+}
+.chat-box::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+}
+
+/* انیمیشن */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
