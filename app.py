@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import shutil
 from utils.ai_logic import generate_plan
-from chat_storage import load_all_chats, save_chat, sanitize_filename
+from chat_storage import load_all_chats, save_chat
 
 # ================= تنظیمات صفحه =================
 st.set_page_config(page_title="💪 مربی هوشمند بدنسازی", page_icon="🏋️", layout="wide")
