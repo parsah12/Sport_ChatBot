@@ -1,7 +1,7 @@
 # utils/ai_logic.py
 import requests
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 def generate_plan(user_input):
     """
@@ -28,8 +28,8 @@ def generate_plan(user_input):
     data = {
         "model": "gpt-4o-mini",
         "messages": [system_prompt, user_message],
-        "temperature": 0.0,
-        "top_p": 1.0
+        "temperature": 0.1,
+        "top_p": 0.3
     }
 
     headers = {
