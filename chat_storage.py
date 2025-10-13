@@ -3,6 +3,7 @@ import os
 import json
 from datetime import datetime
 
+# مسیر پوشه و فایل دیتابیس
 DB_DIR = "chats"
 DB_PATH = os.path.join(DB_DIR, "chats.db")
 
@@ -10,7 +11,7 @@ DB_PATH = os.path.join(DB_DIR, "chats.db")
 if not os.path.exists(DB_DIR):
     os.makedirs(DB_DIR)
 
-# ایجاد جدول چت‌ها اگر وجود ندارد
+# ================= تابع ایجاد جدول در صورت نبود =================
 def init_db():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("""
@@ -24,6 +25,7 @@ def init_db():
         """)
         conn.commit()
 
+# ================= ذخیره یا بروزرسانی چت =================
 def save_chat(messages, title):
     """ذخیره یا بروزرسانی چت در دیتابیس"""
     data = json.dumps(messages, ensure_ascii=False)
@@ -37,6 +39,7 @@ def save_chat(messages, title):
         """, (title, data, datetime.now().isoformat()))
         conn.commit()
 
+# ================= بارگذاری همه چت‌ها =================
 def load_all_chats():
     """بارگذاری همه چت‌ها به ترتیب آخرین بروزرسانی"""
     with sqlite3.connect(DB_PATH) as conn:
@@ -57,5 +60,18 @@ def load_all_chats():
             print(f"❌ خطا در بارگذاری {title}")
     return chats
 
-# مقداردهی اولیه دیتابیس
+# ================= مقداردهی اولیه دیتابیس =================
 init_db()
+
+# ================= تست: نمایش تمام چت‌ها در صورت اجرای مستقیم فایل =================
+if __name__ == "__main__":
+    chats = load_all_chats()
+
+    if not chats:
+        print("⚠️ هیچ چتی در دیتابیس ذخیره نشده.")
+    else:
+        print(f"✅ {len(chats)} چت پیدا شد:\n")
+        for i, chat in enumerate(chats, start=1):
+            print(f"{i}. {chat['title']}  (آخرین بروزرسانی: {chat['updated_at']})")
+            print(f"   تعداد پیام‌ها: {len(chat['messages'])}")
+            print("-" * 40)
