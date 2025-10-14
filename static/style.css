@@ -1,78 +1,122 @@
 /* 🎨 استایل کلی Streamlit */
 [data-testid="stAppViewContainer"] {
-    background-color: #0f0f0f !important;
+    background-color: #e0f2fe !important;
     color: #fff !important;
     font-family: "Segoe UI", Arial, sans-serif !important;
 }
 
 /* 🎨 استایل سایدبار Streamlit */
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #202020, #101010) !important;
+/* 🎚️ استایل سایدبار Streamlit */
+section[data-testid="stSidebar"] {
+    background-color: #111 !important;
     color: #fff !important;
+    border-right: 2px solid #00ffcc !important;
+    box-shadow: 2px 0 10px rgba(0, 255, 204, 0.15);
     padding: 20px !important;
-    border-right: 2px solid #333 !important;
 }
 
-[data-testid="stSidebar"] h2 {
-    color: #ffcc00 !important;
+/* تیترهای داخل سایدبار */
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    color: #00ffcc !important;
     text-align: center !important;
-    margin-bottom: 15px !important;
+    font-weight: bold !important;
 }
 
-[data-testid="stSidebar"] button {
+/* دکمه‌های سایدبار */
+section[data-testid="stSidebar"] button {
+    background-color: #1a1a1a !important;
+    color: #00ffcc !important;
+    border: 1px solid #00ffcc !important;
+    border-radius: 12px !important;
+    padding: 8px 16px !important;
+    margin: 6px 0 !important;
+    font-size: 15px !important;
     width: 100% !important;
-    background-color: #333 !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 10px !important;
-    margin: 5px 0 !important;
-    cursor: pointer !important;
-    transition: 0.3s !important;
+    transition: all 0.25s ease !important;
 }
 
-[data-testid="stSidebar"] button:hover {
-    background-color: #555 !important;
-    transform: scale(1.02) !important;
+/* افکت هاور روی دکمه‌ها */
+section[data-testid="stSidebar"] button:hover {
+    background-color: #00ffcc !important;
+    color: #101010 !important;
+    transform: scale(1.03) !important;
 }
+
+/* مرز جداکننده */
+section[data-testid="stSidebar"] hr {
+    border: 1px solid #222 !important;
+    margin: 12px 0 !important;
+}
+
+/* پیام موفقیت یا اخطار در سایدبار */
+section[data-testid="stSidebar"] .stAlert {
+    background-color: #0e0e0e !important;
+    border-left: 4px solid #00ffcc !important;
+    color: #00ffcc !important;
+    border-radius: 10px !important;
+    padding: 10px 15px !important;
+    font-size: 14px !important;
+}
+
+/* اسکرول نرم داخل سایدبار */
+section[data-testid="stSidebar"]::-webkit-scrollbar {
+    width: 8px;
+}
+
+section[data-testid="stSidebar"]::-webkit-scrollbar-thumb {
+    background-color: #00ffcc;
+    border-radius: 10px;
+}
+
+section[data-testid="stSidebar"]::-webkit-scrollbar-track {
+    background-color: #1a1a1a;
+}
+
 
 /* 🧭 سربرگ بالای Streamlit */
 [data-testid="stHeader"] {
-    background-color: #101010 !important;
+     background-color: #e0f2fe;
     border-bottom: 1px solid #222 !important;
 }
 
 /* 💬 کانتینر اصلی چت */
-[data-testid="stAppViewContainer"] .main-container {
-    display: flex !important;
-    flex-direction: column-reverse !important;
-    justify-content: space-between !important;
-    height: 100vh !important;
-    max-width: 900px !important;
-    margin: auto !important;
-    padding: 10px !important;
-}
-
-/* 🧠 سربرگ سفارشی چت */
 [data-testid="stAppViewContainer"] .header {
+    position: sticky !important; /* یا fixed */
+    top: 0 !important;
+    z-index: 100 !important;
+    background-color: #101010 !important;
+    color: #00ffcc !important;
     text-align: center !important;
     font-size: 26px !important;
     font-weight: bold !important;
-    color: #00ffcc !important;
     padding: 20px !important;
     border-bottom: 1px solid #222 !important;
-    margin-bottom: 20px !important;
+    background-color: #e0f2fe !important;
 }
 
-/* 💬 بخش چت */
+/* 🎨 کانتینر اصلی */
+[data-testid="stAppViewContainer"] .main-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    max-width: 900px !important;
+    margin: auto !important;
+    padding: 0 !important;
+    background-color: #e0f2fe !important;
+}
+
+/* 🎨 بخش چت - فقط خودش اسکرول بخوره */
 [data-testid="stAppViewContainer"] .chat-box {
     flex: 1 !important;
-    overflow-y: auto !important;
+    overflow-y: auto !important; /* اسکرول فقط داخل بخش چت */
     padding: 20px !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 15px !important;
+    margin-top: 0 !important;
     color: #00ffcc !important;
+    background-color: #e0f2fe !important;
 }
 
 /* پیام‌ها */
@@ -83,6 +127,7 @@
     line-height: 1.6 !important;
     animation: fadeIn 0.3s ease !important;
     font-size: 24px !important;
+  
 }
 
 [data-testid="stAppViewContainer"] .msg.user {
@@ -92,6 +137,7 @@
     width: 100% !important;
     text-align: right !important;
     color: #0f0f0f !important;
+    
 }
 
 [data-testid="stAppViewContainer"] .msg.bot {
@@ -109,6 +155,38 @@
 [data-testid="stAppViewContainer"] .chat-box::-webkit-scrollbar-thumb {
     background: #0826d3 !important;
     border-radius: 4px !important;
+}
+[data-testid="stChatInput"] input {
+    background-color: red !important;
+    color: #fff !important;
+    border: 1px solid #333 !important;
+    border-radius: 12px !important;
+    padding: 12px 15px !important;
+    font-size: 16px !important;
+    width: 100% !important;
+}
+
+[data-testid="stChatInput"] input:focus {
+    border-color: #00ffcc !important;
+    outline: none !important;
+    box-shadow: 0 0 5px #00ffcc !important;
+}
+
+/* دکمه ارسال */
+button[kind="primary"] {
+    background-color: #00ffcc !important;
+    color: #101010 !important;
+    font-weight: bold !important;
+    border-radius: 12px !important;
+    padding: 10px 20px !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: 0.3s !important;
+}
+
+button[kind="primary"]:hover {
+    background-color: #00ddaa !important;
+    transform: scale(1.02) !important;
 }
 
 /* ✨ انیمیشن */
