@@ -11,9 +11,11 @@ DB_PATH = os.path.join(DB_DIR, "chats.db")
 if not os.path.exists(DB_DIR):
     os.makedirs(DB_DIR)
 
-# ================= تابع ایجاد جدول در صورت نبود =================
-def init_db():
+def init_db(clear_existing=False):
     with sqlite3.connect(DB_PATH) as conn:
+        if clear_existing:
+            conn.execute("DELETE FROM chats")
+            conn.commit()
         conn.execute("""
             CREATE TABLE IF NOT EXISTS chats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
