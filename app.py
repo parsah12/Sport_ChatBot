@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import shutil
 from utils.ai_logic import generate_plan
-from chat_storage import load_all_chats, save_chat, init_db
+from chat_storage import load_all_chats, save_chat, init_db , delete_all_chats
 
 # ================= تنظیمات صفحه =================
 st.set_page_config(page_title="💪 مربی هوشمند بدنسازی", page_icon="🏋️", layout="wide")
@@ -40,15 +40,10 @@ if st.sidebar.button("🆕 چت جدید"):
     st.rerun()  # فعلاً ذخیره نمی‌کنیم تا کاربر چیزی تایپ نکنه
 
 # دکمه پاک کردن همه چت‌ها
-if st.sidebar.button("🗑️ پاک کردن همه چت‌ها"):
-    shutil.rmtree("chats", ignore_errors=True)
-    os.makedirs("chats", exist_ok=True)  # <-- اینجا
+if st.sidebar.button("🗑️ پاک کردن همه چت‌ها", key="clear_chats"):
+    delete_all_chats()  # ✅ دیتابیس رو خالی می‌کنه، بدون حذف فایل
     st.session_state.all_chats = []
     st.session_state.current_chat = {"title": "چت جدید", "messages": []}
-    
-    # مقداردهی اولیه دیتابیس دوباره بعد از پاک کردن
-    init_db()
-    
     st.sidebar.success("✅ همه چت‌ها پاک شدند.")
     st.rerun()
 
@@ -66,7 +61,7 @@ for msg in st.session_state.current_chat["messages"]:
     role_class = "user" if msg["role"] == "user" else "bot"
     emoji = "👤" if msg["role"] == "user" else "🤖"
     st.markdown(f"<div class='msg {role_class}'>{emoji} {msg['content']}</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+
 
 # ================= ورودی کاربر =================
 user_input = st.chat_input("هدفت از ورزش چیه؟ (مثلاً چربی کم کنم یا عضله‌سازی کنم...)")
@@ -89,3 +84,5 @@ if user_input:
     # ذخیره در دیتابیس
     save_chat(st.session_state.current_chat["messages"], st.session_state.current_chat["title"])
     st.rerun()
+
+st.markdown("</div>", unsafe_allow_html=True)    
