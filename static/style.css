@@ -1,12 +1,11 @@
 /* 🎨 استایل کلی Streamlit */
 [data-testid="stAppViewContainer"] {
-    background-color: #e0f2fe !important;
+    background-color: #8fd0ff !important;
     color: #fff !important;
     font-family: "Segoe UI", Arial, sans-serif !important;
 }
 
-/* 🎨 استایل سایدبار Streamlit */
-/* 🎚️ استایل سایدبار Streamlit */
+
 section[data-testid="stSidebar"] {
     background-color: #111 !important;
     color: #fff !important;
@@ -76,7 +75,7 @@ section[data-testid="stSidebar"]::-webkit-scrollbar-track {
 
 /* 🧭 سربرگ بالای Streamlit */
 [data-testid="stHeader"] {
-     background-color: #e0f2fe;
+     background-color: #8fd0ff;
     border-bottom: 1px solid #222 !important;
 }
 
@@ -85,14 +84,14 @@ section[data-testid="stSidebar"]::-webkit-scrollbar-track {
     position: sticky !important; /* یا fixed */
     top: 0 !important;
     z-index: 100 !important;
-    background-color: #101010 !important;
-    color: #00ffcc !important;
+    
+    color: black !important;
     text-align: center !important;
     font-size: 26px !important;
     font-weight: bold !important;
     padding: 20px !important;
-    border-bottom: 1px solid #222 !important;
-    background-color: #e0f2fe !important;
+
+
 }
 
 /* 🎨 کانتینر اصلی */
@@ -116,7 +115,7 @@ section[data-testid="stSidebar"]::-webkit-scrollbar-track {
     gap: 15px !important;
     margin-top: 0 !important;
     color: #00ffcc !important;
-    background-color: #e0f2fe !important;
+
 }
 
 /* پیام‌ها */
@@ -156,17 +155,15 @@ section[data-testid="stSidebar"]::-webkit-scrollbar-track {
     background: #0826d3 !important;
     border-radius: 4px !important;
 }
-[data-testid="stChatInput"] input {
+[data-testid="stBottomBlockContainer"] input {
     background-color: red !important;
     color: #fff !important;
-    border: 1px solid #333 !important;
-    border-radius: 12px !important;
-    padding: 12px 15px !important;
+   
     font-size: 16px !important;
     width: 100% !important;
 }
 
-[data-testid="stChatInput"] input:focus {
+[data-testid="stBottomBlockContainer"] input:focus {
     border-color: #00ffcc !important;
     outline: none !important;
     box-shadow: 0 0 5px #00ffcc !important;
@@ -195,49 +192,3 @@ button[kind="primary"]:hover {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* ====== دکمه‌ها در سایدبار (ویژه کلاس‌ها) ====== */
-[data-testid="stSidebar"] .new-chat {
-    background-color: #007bff !important;
-    font-weight: 600 !important;
-    width: 80px !important;
-}
-[data-testid="stSidebar"] .new-chat:hover {
-    background-color: #0062d1 !important;
-}
-
-[data-testid="stSidebar"] .clear-chats {
-    background-color: #2b2b36 !important;
-    color: #ccc !important;
-    width: 80px !important;
-}
-[data-testid="stSidebar"] .clear-chats:hover {
-    background-color: #3b3b48 !important;
-}
-
-/* ====== لیست چت‌ها ====== */
-[data-testid="stSidebar"] .chat-list {
-    margin-top: 10px !important;
-    flex-grow: 1 !important;
-    overflow-y: auto !important;
-}
-
-[data-testid="stSidebar"] .chat-item {
-    background-color: #2b2b36 !important;
-    border-radius: 10px !important;
-    padding: 10px !important;
-    margin-bottom: 8px !important;
-    font-size: 14px !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-    text-align: center !important;
-}
-
-[data-testid="stSidebar"] .chat-item:hover {
-    background-color: #383848 !important;
-}
-
-[data-testid="stSidebar"] .chat-item.active {
-    background-color: #383848 !important;
-    border: 1px solid #6b6bff !important;
-    box-shadow: 0 0 6px rgba(107, 107, 255, 0.3) !important;
-}
