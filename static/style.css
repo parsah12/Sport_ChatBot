@@ -5,7 +5,7 @@
     font-family: "Segoe UI", Arial, sans-serif !important;
 }
 
-
+/* 🎨 سایدبار */
 section[data-testid="stSidebar"] {
     background-color: #111 !important;
     color: #fff !important;
@@ -14,7 +14,6 @@ section[data-testid="stSidebar"] {
     padding: 20px !important;
 }
 
-/* تیترهای داخل سایدبار */
 section[data-testid="stSidebar"] h2,
 section[data-testid="stSidebar"] h3 {
     color: #00ffcc !important;
@@ -22,7 +21,6 @@ section[data-testid="stSidebar"] h3 {
     font-weight: bold !important;
 }
 
-/* دکمه‌های سایدبار */
 section[data-testid="stSidebar"] button {
     background-color: #1a1a1a !important;
     color: #00ffcc !important;
@@ -35,20 +33,17 @@ section[data-testid="stSidebar"] button {
     transition: all 0.25s ease !important;
 }
 
-/* افکت هاور روی دکمه‌ها */
 section[data-testid="stSidebar"] button:hover {
     background-color: #00ffcc !important;
     color: #101010 !important;
     transform: scale(1.03) !important;
 }
 
-/* مرز جداکننده */
 section[data-testid="stSidebar"] hr {
     border: 1px solid #222 !important;
     margin: 12px 0 !important;
 }
 
-/* پیام موفقیت یا اخطار در سایدبار */
 section[data-testid="stSidebar"] .stAlert {
     background-color: #0e0e0e !important;
     border-left: 4px solid #00ffcc !important;
@@ -58,40 +53,34 @@ section[data-testid="stSidebar"] .stAlert {
     font-size: 14px !important;
 }
 
-/* اسکرول نرم داخل سایدبار */
+/* اسکرول سایدبار */
 section[data-testid="stSidebar"]::-webkit-scrollbar {
     width: 8px;
 }
-
 section[data-testid="stSidebar"]::-webkit-scrollbar-thumb {
     background-color: #00ffcc;
     border-radius: 10px;
 }
-
 section[data-testid="stSidebar"]::-webkit-scrollbar-track {
     background-color: #1a1a1a;
 }
 
-
-/* 🧭 سربرگ بالای Streamlit */
+/* 🧭 سربرگ */
 [data-testid="stHeader"] {
-     background-color: #8fd0ff;
+    background-color: #8fd0ff;
     border-bottom: 1px solid #222 !important;
 }
 
-/* 💬 کانتینر اصلی چت */
+/* 💬 تیتر بالای صفحه */
 [data-testid="stAppViewContainer"] .header {
-    position: sticky !important; /* یا fixed */
+    position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
-    
     color: black !important;
     text-align: center !important;
-    font-size: 26px !important;
+    font-size: 40px !important;
     font-weight: bold !important;
     padding: 20px !important;
-
-
 }
 
 /* 🎨 کانتینر اصلی */
@@ -105,46 +94,47 @@ section[data-testid="stSidebar"]::-webkit-scrollbar-track {
     background-color: #e0f2fe !important;
 }
 
-/* 🎨 بخش چت - فقط خودش اسکرول بخوره */
+/* 💬 چت‌باکس */
 [data-testid="stAppViewContainer"] .chat-box {
     flex: 1 !important;
-    overflow-y: auto !important; /* اسکرول فقط داخل بخش چت */
+    overflow-y: auto !important;
     padding: 20px !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 15px !important;
-    margin-top: 0 !important;
     color: #00ffcc !important;
-
 }
 
-/* پیام‌ها */
+/* 💬 پیام‌ها */
 [data-testid="stAppViewContainer"] .msg {
     padding: 14px 18px !important;
     border-radius: 16px !important;
-    margin-top: 40px !important;
     line-height: 1.6 !important;
     animation: fadeIn 0.3s ease !important;
-    font-size: 24px !important;
-  
+    font-size: 18px !important;
+    direction: rtl !important;
 }
 
+/* پیام کاربر راست */
 [data-testid="stAppViewContainer"] .msg.user {
     align-self: flex-end !important;
-    background: snow !important;
+    background: #ffffff !important;
     border: 1px solid #444 !important;
-    width: 100% !important;
     text-align: right !important;
     color: #0f0f0f !important;
-    
+    max-width: 75% !important;
+    border-radius: 16px 16px 0 16px !important;
 }
 
+/* پیام ربات چپ */
 [data-testid="stAppViewContainer"] .msg.bot {
     align-self: flex-start !important;
-    background: snow !important;
+    background: rebeccapurple !important;
     border: 1px solid #333 !important;
     text-align: left !important;
-    color: #0f0f0f !important;
+    color: #fff !important;
+    max-width: 75% !important;
+    border-radius: 16px 16px 16px 0 !important;
 }
 
 /* 📜 اسکرول */
@@ -155,40 +145,100 @@ section[data-testid="stSidebar"]::-webkit-scrollbar-track {
     background: #0826d3 !important;
     border-radius: 4px !important;
 }
-[data-testid="stBottomBlockContainer"] input {
-    background-color: red !important;
-    color: #fff !important;
-   
-    font-size: 16px !important;
+
+/* 🎯 بخش ورودی چت (پایین صفحه) */
+[data-testid="stBottomBlockContainer"] {
+    background-color: #8fd0ff !important;
+    padding: 15px 30px !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 100 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+/* فرم اصلی ورودی و دکمه */
+[data-testid="stBottomBlockContainer"] form {
+    display: flex !important;
+    flex-direction: row-reverse !important; /* 👈 دکمه سمت چپ */
+    align-items: center !important;
+    justify-content: space-between !important;
+    background-color: #1f1f26 !important;
+    border-radius: 25px !important;
+    padding: 6px 10px !important;
     width: 100% !important;
+    max-width: 900px !important;
+    direction: rtl !important;
 }
 
-[data-testid="stBottomBlockContainer"] input:focus {
-    border-color: #00ffcc !important;
-    outline: none !important;
-    box-shadow: 0 0 5px #00ffcc !important;
-}
-
-/* دکمه ارسال */
-button[kind="primary"] {
-    background-color: #00ffcc !important;
-    color: #101010 !important;
-    font-weight: bold !important;
-    border-radius: 12px !important;
-    padding: 10px 20px !important;
+/* 💬 فیلد ورودی */
+textarea[data-testid="stChatInputTextArea"] {
+    direction: rtl !important;
+    text-align: right !important;
+    color: #fff !important;
+    background-color: transparent !important;
     border: none !important;
-    cursor: pointer !important;
-    transition: 0.3s !important;
+    outline: none !important;
+    flex-grow: 1 !important;
+    font-size: 18px !important;
+    font-family: "Segoe UI", Arial, sans-serif !important;
+    resize: none !important;
+    padding: 12px 10px !important;
+    margin-right: 8px !important;
 }
 
-button[kind="primary"]:hover {
-    background-color: #00ddaa !important;
-    transform: scale(1.02) !important;
+/* placeholder */
+textarea[data-testid="stChatInputTextArea"]::placeholder {
+    color: #ccc !important;
+}
+
+/* 🧠 فوکوس */
+textarea[data-testid="stChatInputTextArea"]:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* ➕ دکمه ارسال */
+[data-testid="stBottomBlockContainer"] button {
+    order: -1 !important;
+    background-color: #0046d3 !important;
+    color: #fff !important;
+    border-radius: 50% !important;
+    border: none !important;
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 24px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-left: 10px !important;
+    transition: none !important;
+}
+
+/* حذف hover */
+[data-testid="stBottomBlockContainer"] button:hover {
+    background-color: #0046d3 !important;
+    transform: none !important;
+}
+
+/* 📱 موبایل */
+@media (max-width: 768px) {
+    textarea[data-testid="stChatInputTextArea"] {
+        font-size: 14px !important;
+        padding: 8px !important;
+    }
+    [data-testid="stBottomBlockContainer"] button {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 20px !important;
+    }
 }
 
 /* ✨ انیمیشن */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(5px); }
     to { opacity: 1; transform: translateY(0); }
 }
-
