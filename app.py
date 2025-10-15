@@ -1,8 +1,7 @@
 import streamlit as st
 import os
-import shutil
 from utils.ai_logic import generate_plan
-from chat_storage import load_all_chats, save_chat, init_db , delete_all_chats
+from chat_storage import load_all_chats, save_chat, init_db, delete_all_chats
 
 # ================= تنظیمات صفحه =================
 st.set_page_config(page_title="💪 مربی هوشمند بدنسازی", page_icon="🏋️", layout="wide")
@@ -37,11 +36,11 @@ if st.sidebar.button("🆕 چت جدید"):
     new_chat = {"title": "چت جدید", "messages": []}
     st.session_state.current_chat = new_chat
     st.session_state.all_chats.insert(0, new_chat)
-    st.rerun()  # فعلاً ذخیره نمی‌کنیم تا کاربر چیزی تایپ نکنه
+    st.rerun()
 
 # دکمه پاک کردن همه چت‌ها
 if st.sidebar.button("🗑️ پاک کردن همه چت‌ها", key="clear_chats"):
-    delete_all_chats()  # ✅ دیتابیس رو خالی می‌کنه، بدون حذف فایل
+    delete_all_chats()
     st.session_state.all_chats = []
     st.session_state.current_chat = {"title": "چت جدید", "messages": []}
     st.sidebar.success("✅ همه چت‌ها پاک شدند.")
@@ -61,7 +60,7 @@ for msg in st.session_state.current_chat["messages"]:
     role_class = "user" if msg["role"] == "user" else "bot"
     emoji = "👤" if msg["role"] == "user" else "🤖"
     st.markdown(f"<div class='msg {role_class}'>{emoji} {msg['content']}</div>", unsafe_allow_html=True)
-
+st.markdown("</div>", unsafe_allow_html=True)
 
 # ================= ورودی کاربر =================
 user_input = st.chat_input("هدفت از ورزش چیه؟ (مثلاً چربی کم کنم یا عضله‌سازی کنم...)")
@@ -72,17 +71,15 @@ if user_input:
 
     # اگر عنوان فعلی پیش‌فرض است، با پیام اول عنوان بساز
     if st.session_state.current_chat["title"].startswith("چت جدید"):
-        new_title = " ".join(user_input.split()[:3])  # چند کلمه اول پیام به عنوان عنوان
+        new_title = " ".join(user_input.split()[:3])
         st.session_state.current_chat["title"] = new_title
 
-    # پاسخ مدل
+    # پاسخ مدل با حافظه کامل
     with st.spinner("🤔 در حال فکر کردن..."):
-        response = generate_plan(user_input)
+        response = generate_plan(st.session_state.current_chat["messages"])
 
     st.session_state.current_chat["messages"].append({"role": "bot", "content": response})
 
     # ذخیره در دیتابیس
     save_chat(st.session_state.current_chat["messages"], st.session_state.current_chat["title"])
     st.rerun()
-
-st.markdown("</div>", unsafe_allow_html=True)    
