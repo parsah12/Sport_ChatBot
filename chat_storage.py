@@ -27,6 +27,12 @@ def init_db(clear_existing=False):
         """)
         conn.commit()
 
+
+def delete_all_chats():
+    """پاک کردن تمام چت‌ها از دیتابیس"""
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("DELETE FROM chats")
+        conn.commit()
 # ================= ذخیره یا بروزرسانی چت =================
 def save_chat(messages, title):
     """ذخیره یا بروزرسانی چت در دیتابیس"""
