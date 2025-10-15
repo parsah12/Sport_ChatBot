@@ -1,33 +1,33 @@
-# utils/ai_logic.py
 import requests
 
 OPENROUTER_API_KEY = "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"
 
-def generate_plan(user_input):
+def generate_plan(chat_history):
     """
-    تولید پاسخ ورزشی و دوستانه برای کاربر با استفاده از OpenRouter و مدل gpt-4o-mini.
-    پاسخ‌ها تکرارپذیر و محدود به موضوع ورزشی هستند و لحن صمیمی دارند.
+    تولید پاسخ ورزشی با حافظه کامل پیام‌ها.
+    chat_history: لیست دیکشنری {"role": "user"|"bot", "content": "پیام"}
     """
     url = "https://openrouter.ai/api/v1/chat/completions"
-    
+
     system_prompt = {
         "role": "system",
         "content": (
             "تو یک مربی ورزشی حرفه‌ای و دوست‌داشتنی هستی. "
-            "فقط به سوالات مرتبط با ورزش، بدنسازی، تغذیه ورزشی، تمرینات، حرکات و برنامه‌های ورزشی پاسخ بده. "
-            "با کاربران به صورت صمیمی و دوستانه صحبت کن، مثل یک دوست واقعی. "
-            "کاربر می‌تواند تو را با صمیمیت صدا کند و از تو تشکر کند و تو با محبت جواب بدهی. "
-            "اگر سوالی غیرورزشی پرسیده شد، با احترام بگو: "
-            "'متأسفم، من فقط به سوالات ورزشی پاسخ می‌دهم.' "
-            "جواب‌ها کوتاه، مفید، علمی و دوستانه باشند."
+            "تمامی پیام‌های قبلی کاربر و ربات را در نظر بگیر و پاسخ بده. "
+            "فقط به سوالات مرتبط با ورزش پاسخ بده. "
+            "جواب‌ها کوتاه، مفید و دوستانه باشند."
         )
     }
 
-    user_message = {"role": "user", "content": user_input}
+    # تبدیل role "bot" به "assistant" برای API
+    messages = [system_prompt] + [
+        {"role": "user" if m["role"]=="user" else "assistant", "content": m["content"]}
+        for m in chat_history
+    ]
 
     data = {
         "model": "gpt-4o-mini",
-        "messages": [system_prompt, user_message],
+        "messages": messages,
         "temperature": 0.1,
         "top_p": 0.3
     }
