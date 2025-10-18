@@ -82,4 +82,7 @@ if user_input:
 
     # ذخیره در دیتابیس
     save_chat(st.session_state.current_chat["messages"], st.session_state.current_chat["title"])
+    
+    # بروزرسانی لیست چت‌ها
+    st.session_state.all_chats = load_all_chats()
     st.rerun()
