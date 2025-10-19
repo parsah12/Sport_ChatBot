@@ -11,7 +11,7 @@ pip install -r requirements.txt
 
 
 Enable a VPN
-Make sure you are connected to a VPN before running the app.......
+Make sure you are connected to a VPN before running the app.
 
 Run the application
 Start the project using the command below:
