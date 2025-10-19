@@ -3,7 +3,6 @@ import os
 import json
 from datetime import datetime
 
-# مسیر پوشه و فایل دیتابیس
 DB_DIR = "chats"
 DB_PATH = os.path.join(DB_DIR, "chats.db")
 
