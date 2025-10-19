@@ -3,7 +3,6 @@ import os
 from utils.ai_logic import generate_plan
 from chat_storage import load_all_chats, save_chat, init_db, delete_all_chats
 
-# ================= تنظیمات صفحه =================
 st.set_page_config(page_title="💪 مربی هوشمند بدنسازی", page_icon="🏋️", layout="wide")
 
 # ================= استایل =================
