@@ -1,4 +1,4 @@
-# Sport_ChatBot
+v# Sport_ChatBot
 An AI-powered fitness chatbot that provides personalized workout and nutrition plans.
 
 
@@ -15,5 +15,8 @@ Make sure you are connected to a VPN before running the app.
 
 Run the application
 Start the project using the command below:
+
+
+
 
 streamlit run app.py
