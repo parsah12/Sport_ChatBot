@@ -1,4 +1,80 @@
-<div class="main-container">
-    <div class="header">🤖 مربی هوشمند بدنسازی</div>
-    <div class="chat-box"></div>
-</div>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مربی هوشمند بدنسازی</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>چت‌ها</h2>
+            <button onclick="send({action:'new_chat'})" class="btn">چت جدید</button>
+            <button onclick="if(confirm('همه پاک بشن؟')) send({action:'clear_all'})" class="btn danger">پاک کردن همه</button>
+            <hr>
+            <div id="chatList" class="chat-list"></div>
+        </div>
+        <div class="chat-area">
+            <div id="chatTitle" class="chat-title">چت جدید</div>
+            <div id="messages" class="messages"></div>
+            <div class="input-box">
+                <input type="text" id="msgInput" placeholder="هدفت چیه؟ (چربی‌سوزی، عضله...)" onkeypress="if(event.key==='Enter') sendMsg()">
+                <button onclick="sendMsg()">ارسال</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+        ws.onmessage = (e) => {
+            const msg = JSON.parse(e.data);
+            if (msg.type === "chats") loadChats(msg.data);
+            if (msg.type === "chat") loadChat(msg);
+            if (msg.type === "new_message") addMessage("bot", msg.content);
+            if (msg.type === "chat_updated") refresh();
+        };
+
+        function send(data) { ws.send(JSON.stringify(data)); }
+        function refresh() { send({action: "get_chats"}); send({action: "get_chat"}); }
+
+        function loadChats(chats) {
+            const list = document.getElementById("chatList");
+            list.innerHTML = "";
+            chats.forEach(c => {
+                const btn = document.createElement("button");
+                btn.className = "chat-btn";
+                btn.textContent = c.title;
+                btn.onclick = () => send({action: "switch_chat", index: c.index});
+                list.appendChild(btn);
+            });
+        }
+
+        function loadChat(data) {
+            document.getElementById("chatTitle").textContent = data.title;
+            const box = document.getElementById("messages");
+            box.innerHTML = "";
+            data.messages.forEach(m => addMessage(m.role, m.content));
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function addMessage(role, content) {
+            const div = document.createElement("div");
+            div.className = `msg ${role}`;
+            div.innerHTML = `<strong>${role === 'user' ? 'شما' : 'مربی'}:</strong> ${content.replace(/\n/g, '<br>')}`;
+            document.getElementById("messages").appendChild(div);
+        }
+
+        function sendMsg() {
+            const input = document.getElementById("msgInput");
+            const text = input.value.trim();
+            if (!text) return;
+            addMessage("user", text);
+            send({action: "send_message", text});
+            input.value = "";
+        }
+
+        ws.onopen = () => refresh();
+    </script>
+</body>
+</html>
