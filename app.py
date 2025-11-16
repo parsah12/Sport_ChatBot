@@ -1,88 +1,92 @@
-import streamlit as st
-import os
+
+import uvicorn
+import json
+from fastapi import FastAPI, WebSocket
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from datetime import datetime
 from utils.ai_logic import generate_plan
 from chat_storage import load_all_chats, save_chat, init_db, delete_all_chats
 
-# ================= تنظیمات صفحه =================
-st.set_page_config(page_title="💪 مربی هوشمند بدنسازی", page_icon="🏋️", layout="wide")
 
-# ================= استایل =================
-css_file = "static/style.css"
-if os.path.exists(css_file):
-    with open(css_file, "r", encoding="utf-8") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-st.markdown("<div class='header'>🏋️ مربی هوشمند بدنسازی</div>", unsafe_allow_html=True)
-
-# ================= مقداردهی اولیه دیتابیس =================
 init_db()
+app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# ================= بارگذاری چت‌ها =================
-if "all_chats" not in st.session_state:
-    st.session_state.all_chats = load_all_chats()
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    with open("static/template.html", encoding="utf-8") as f:
+        return f.read()
 
-if "current_chat" not in st.session_state:
-    if st.session_state.all_chats:
-        st.session_state.current_chat = st.session_state.all_chats[0]
-    else:
-        st.session_state.current_chat = {"title": "چت جدید", "messages": []}
+@app.websocket("/ws")
+async def ws_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    all_chats = load_all_chats()
+    current_chat = all_chats[0] if all_chats else None
 
-# ================= سایدبار =================
-st.sidebar.markdown("<h2 style='text-align:center'>💬 چت‌ها</h2>", unsafe_allow_html=True)
-st.sidebar.markdown("<hr>", unsafe_allow_html=True)
+    def create_chat():
+        nonlocal current_chat, all_chats
+        title = f"چت جدید {datetime.now().strftime('%H:%M')}"
+        save_chat([], title)
+        all_chats = load_all_chats()
+        current_chat = all_chats[0]
 
-# دکمه ایجاد چت جدید
-if st.sidebar.button("🆕 چت جدید"):
-    new_chat = {"title": "چت جدید", "messages": []}
-    st.session_state.current_chat = new_chat
-    st.session_state.all_chats.insert(0, new_chat)
-    st.rerun()
+    try:
+        while True:
+            data = json.loads(await websocket.receive_text())
+            action = data.get("action")
 
-# دکمه پاک کردن همه چت‌ها
-if st.sidebar.button("🗑️ پاک کردن همه چت‌ها", key="clear_chats"):
-    delete_all_chats()
-    st.session_state.all_chats = []
-    st.session_state.current_chat = {"title": "چت جدید", "messages": []}
-    st.sidebar.success("✅ همه چت‌ها پاک شدند.")
-    st.rerun()
+            if action == "get_chats":
+                await websocket.send_json({"type": "chats", "data": [
+                    {"title": c["title"], "index": i} for i, c in enumerate(load_all_chats())
+                ]})
 
-# نمایش چت‌های ذخیره‌شده با عنوان واقعی
-st.sidebar.markdown("<hr>", unsafe_allow_html=True)
-for idx, chat in enumerate(st.session_state.all_chats):
-    title = chat.get("title", f"چت {idx + 1}")
-    if st.sidebar.button(title, key=f"chat_{idx}"):
-        st.session_state.current_chat = chat
-        st.rerun()
+            elif action == "get_chat":
+                if not current_chat: create_chat()
+                await websocket.send_json({
+                    "type": "chat",
+                    "title": current_chat["title"],
+                    "messages": current_chat["messages"]
+                })
 
-# ================= نمایش پیام‌ها =================
-st.markdown("<div class='chat-box'>", unsafe_allow_html=True)
-for msg in st.session_state.current_chat["messages"]:
-    role_class = "user" if msg["role"] == "user" else "bot"
-    emoji = "👤" if msg["role"] == "user" else "🤖"
-    st.markdown(f"<div class='msg {role_class}'>{emoji} {msg['content']}</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+            elif action == "new_chat":
+                create_chat()
+                await websocket.send_json({"type": "chat_updated"})
 
-# ================= ورودی کاربر =================
-user_input = st.chat_input("هدفت از ورزش چیه؟ (مثلاً چربی کم کنم یا عضله‌سازی کنم...)")
+            elif action == "switch_chat":
+                idx = data.get("index", 0)
+                chats = load_all_chats()
+                if 0 <= idx < len(chats):
+                    current_chat = chats[idx]
+                await websocket.send_json({"type": "chat_updated"})
 
-if user_input:
-    # ذخیره پیام کاربر
-    st.session_state.current_chat["messages"].append({"role": "user", "content": user_input})
+            elif action == "clear_all":
+                delete_all_chats()
+                create_chat()
+                await websocket.send_json({"type": "chat_updated"})
 
-    # اگر عنوان فعلی پیش‌فرض است، با پیام اول عنوان بساز
-    if st.session_state.current_chat["title"].startswith("چت جدید"):
-        new_title = " ".join(user_input.split()[:3])
-        st.session_state.current_chat["title"] = new_title
+            elif action == "send_message":
+                text = data.get("text", "").strip()
+                if not text or not current_chat: continue
+                current_chat["messages"].append({"role": "user", "content": text})
+                if current_chat["title"].startswith("چت جدید"):
+                    words = text.split()[:3]
+                    new_title = " ".join(words) or current_chat["title"]
+                    if new_title != current_chat["title"]:
+                        import sqlite3
+                        with sqlite3.connect("chats/chats.db") as conn:
+                            conn.execute("DELETE FROM chats WHERE title = ?", (current_chat["title"],))
+                        current_chat["title"] = new_title
+                response = generate_plan(current_chat["messages"])
+                current_chat["messages"].append({"role": "bot", "content": response})
+                save_chat(current_chat["messages"], current_chat["title"])
+                await websocket.send_json({"type": "new_message", "role": "bot", "content": response})
 
-    # پاسخ مدل با حافظه کامل
-    with st.spinner("🤔 در حال فکر کردن..."):
-        response = generate_plan(st.session_state.current_chat["messages"])
+    except:
+        pass
 
-    st.session_state.current_chat["messages"].append({"role": "bot", "content": response})
-
-    # ذخیره در دیتابیس
-    save_chat(st.session_state.current_chat["messages"], st.session_state.current_chat["title"])
-    
-    # بروزرسانی لیست چت‌ها
-    st.session_state.all_chats = load_all_chats()
-    st.rerun()
+if __name__ == "__main__":
+    print("مربی هوشمند بدنسازی در حال اجرا...")
+    print("آدرس: http://127.0.0.1:8000")
+    print("برای بستن: Ctrl+C")
+    uvicorn.run(app, host="127.0.0.1", port=8000)    
