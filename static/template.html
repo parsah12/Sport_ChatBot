@@ -8,6 +8,7 @@
 </head>
 <body>
     <div class="container">
+        <!-- سایدبار -->
         <div class="sidebar">
             <h2>چت‌ها</h2>
             <button onclick="send({action:'new_chat'})" class="btn">چت جدید</button>
@@ -15,25 +16,41 @@
             <hr>
             <div id="chatList" class="chat-list"></div>
         </div>
+
+        <!-- ناحیه چت -->
         <div class="chat-area">
             <div id="chatTitle" class="chat-title">چت جدید</div>
             <div id="messages" class="messages"></div>
-            <div class="input-box">
-                <input type="text" id="msgInput" placeholder="هدفت چیه؟ (چربی‌سوزی، عضله...)" onkeypress="if(event.key==='Enter') sendMsg()">
-                <button onclick="sendMsg()">ارسال</button>
+
+            <!-- ورودی چت + آپلود -->
+            <div class="input-container">
+                <div id="filePreview" class="file-preview"></div>
+
+                <div class="input-box">
+                    <label for="fileInput" class="attach-btn" title="آپلود عکس یا فیلم">attach_file</label>
+                    <input type="file" id="fileInput" accept="image/*,video/*" hidden>
+
+                    <textarea id="msgInput" placeholder="هدفت چیه؟ (چربی‌سوزی، عضله، فرم بدن...)" rows="1"></textarea>
+
+                    <button id="sendBtn" class="send-btn">send</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         const ws = new WebSocket("ws://127.0.0.1:8000/ws");
+        let pendingFile = null;
+
         ws.onmessage = (e) => {
             const msg = JSON.parse(e.data);
             if (msg.type === "chats") loadChats(msg.data);
             if (msg.type === "chat") loadChat(msg);
-            if (msg.type === "new_message") addMessage("bot", msg.content);
+            if (msg.type === "new_message") addMessage(msg.role || "bot", msg.content, msg.file);
             if (msg.type === "chat_updated") refresh();
         };
+
+        ws.onopen = () => refresh();
 
         function send(data) { ws.send(JSON.stringify(data)); }
         function refresh() { send({action: "get_chats"}); send({action: "get_chat"}); }
@@ -54,27 +71,109 @@
             document.getElementById("chatTitle").textContent = data.title;
             const box = document.getElementById("messages");
             box.innerHTML = "";
-            data.messages.forEach(m => addMessage(m.role, m.content));
+            data.messages.forEach(m => addMessage(m.role, m.content, m.file));
             box.scrollTop = box.scrollHeight;
         }
 
-        function addMessage(role, content) {
+        function addMessage(role, content, file = null) {
             const div = document.createElement("div");
             div.className = `msg ${role}`;
-            div.innerHTML = `<strong>${role === 'user' ? 'شما' : 'مربی'}:</strong> ${content.replace(/\n/g, '<br>')}`;
+
+            let html = `<strong>${role === 'user' ? 'شما' : 'مربی'}:</strong> `;
+            if (file) {
+                if (file.mimeType.startsWith('image/')) {
+                    html += `<img src="/uploads/${file.filename}" style="max-width:100%;border-radius:8px;margin:8px 0;display:block;">`;
+                } else if (file.mimeType.startsWith('video/')) {
+                    html += `<video src="/uploads/${file.filename}" controls style="max-width:100%;border-radius:8px;margin:8px 0;display:block;"></video>`;
+                }
+            }
+            html += content.replace(/\n/g, '<br>');
+            div.innerHTML = html;
             document.getElementById("messages").appendChild(div);
+            div.scrollIntoView({behavior: "smooth"});
         }
 
-        function sendMsg() {
+        // آپلود فایل
+        document.getElementById("fileInput").addEventListener("change", async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            pendingFile = file;
+            showPreview(file);
+        });
+
+        function showPreview(file) {
+            const preview = document.getElementById("filePreview");
+            preview.innerHTML = "";
+            const div = document.createElement("div");
+            div.style.position = "relative";
+            div.style.display = "inline-block";
+
+            if (file.type.startsWith("image/")) {
+                const img = document.createElement("img");
+                img.src = URL.createObjectURL(file);
+                div.appendChild(img);
+            } else if (file.type.startsWith("video/")) {
+                const video = document.createElement("video");
+                video.src = URL.createObjectURL(file);
+                video.controls = true;
+                div.appendChild(video);
+            }
+
+            const removeBtn = document.createElement("button");
+            removeBtn.textContent = "×";
+            removeBtn.className = "remove-preview";
+            removeBtn.onclick = () => {
+                preview.innerHTML = "";
+                pendingFile = null;
+                document.getElementById("fileInput").value = "";
+            };
+            div.appendChild(removeBtn);
+            preview.appendChild(div);
+        }
+
+        // ارسال پیام
+        async function sendMessage() {
             const input = document.getElementById("msgInput");
             const text = input.value.trim();
-            if (!text) return;
-            addMessage("user", text);
-            send({action: "send_message", text});
+            if (!text && !pendingFile) return;
+
+            if (text) {
+                addMessage("user", text);
+                send({action: "send_message", text});
+            }
+
+            if (pendingFile) {
+                const base64 = await fileToBase64(pendingFile);
+                send({
+                    action: "send_file",
+                    filename: pendingFile.name,
+                    mimeType: pendingFile.type,
+                    data: base64.split(',')[1],
+                    text: text || "لطفاً این عکس/فیلم رو تحلیل کن و برنامه بدنسازی مناسب بده"
+                });
+                document.getElementById("filePreview").innerHTML = "";
+                pendingFile = null;
+            }
+
             input.value = "";
+            document.getElementById("fileInput").value = "";
         }
 
-        ws.onopen = () => refresh();
+        function fileToBase64(file) {
+            return new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        document.getElementById("sendBtn").addEventListener("click", sendMessage);
+        document.getElementById("msgInput").addEventListener("keydown", e => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>

@@ -123,3 +123,18 @@ body { font-family: Tahoma, sans-serif; background: #f0f2f5; }
     cursor: pointer;
     font-weight: bold;
 }
+
+.msg img, .msg video {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 12px;
+    margin: 8px 0;
+    display: block;
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+}
+
+.msg img:hover, .msg video:hover {
+    opacity: 0.9;
+}
