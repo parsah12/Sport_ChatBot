@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
     <title>مربی هوشمند بدنسازی</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .msg img, .msg video { max-width: 300px; border-radius: 12px; margin: 8px 0; cursor: pointer; }
+        .file-preview img, .file-preview video { max-height: 180px; border-radius: 12px; }
+        .remove-preview { position: absolute; top: -8px; right: -8px; background: red; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 16px; }
+    </style>
 </head>
 <body>
     <div class="container">
-        <!-- سایدبار -->
         <div class="sidebar">
             <h2>چت‌ها</h2>
             <button onclick="send({action:'new_chat'})" class="btn">چت جدید</button>
@@ -17,36 +22,44 @@
             <div id="chatList" class="chat-list"></div>
         </div>
 
-        <!-- ناحیه چت -->
         <div class="chat-area">
             <div id="chatTitle" class="chat-title">چت جدید</div>
             <div id="messages" class="messages"></div>
 
-            <!-- ورودی چت + آپلود -->
             <div class="input-container">
                 <div id="filePreview" class="file-preview"></div>
 
                 <div class="input-box">
-                    <label for="fileInput" class="attach-btn" title="آپلود عکس یا فیلم">attach_file</label>
+                    <label for="fileInput" class="attach-btn" title="آپلود عکس یا فیلم"><i class="fa-solid fa-paperclip"></i></label>
                     <input type="file" id="fileInput" accept="image/*,video/*" hidden>
 
                     <textarea id="msgInput" placeholder="هدفت چیه؟ (چربی‌سوزی، عضله، فرم بدن...)" rows="1"></textarea>
-
                     <button id="sendBtn" class="send-btn">send</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="imageModal" class="modal">
+        <span class="modal-close" onclick="closeModal()">×</span>
+        <img id="modalImage" src="" alt="بزرگ‌نمایی">
+    </div>
+
     <script>
         const ws = new WebSocket("ws://127.0.0.1:8000/ws");
         let pendingFile = null;
+        let lastSentMessageId = null;  // این خط خیلی مهمه! برای جلوگیری از دابلیکیت
 
         ws.onmessage = (e) => {
             const msg = JSON.parse(e.data);
             if (msg.type === "chats") loadChats(msg.data);
             if (msg.type === "chat") loadChat(msg);
-            if (msg.type === "new_message") addMessage(msg.role || "bot", msg.content, msg.file);
+            if (msg.type === "new_message") {
+                // فقط اگر پیام جدید از سرور باشه و قبلاً نمایش نداده باشیم
+                if (msg.role === "assistant" || msg.id !== lastSentMessageId) {
+                    addMessage(msg.role || "bot", msg.content, msg.file);
+                }
+            }
             if (msg.type === "chat_updated") refresh();
         };
 
@@ -61,14 +74,14 @@
             chats.forEach(c => {
                 const btn = document.createElement("button");
                 btn.className = "chat-btn";
-                btn.textContent = c.title;
+                btn.textContent = c.title || "چت جدید";
                 btn.onclick = () => send({action: "switch_chat", index: c.index});
                 list.appendChild(btn);
             });
         }
 
         function loadChat(data) {
-            document.getElementById("chatTitle").textContent = data.title;
+            document.getElementById("chatTitle").textContent = data.title || "چت جدید";
             const box = document.getElementById("messages");
             box.innerHTML = "";
             data.messages.forEach(m => addMessage(m.role, m.content, m.file));
@@ -80,21 +93,34 @@
             div.className = `msg ${role}`;
 
             let html = `<strong>${role === 'user' ? 'شما' : 'مربی'}:</strong> `;
+
             if (file) {
                 if (file.mimeType.startsWith('image/')) {
-                    html += `<img src="/uploads/${file.filename}" style="max-width:100%;border-radius:8px;margin:8px 0;display:block;">`;
-                } else if (file.mimeType.startsWith('video/')) {
-                    html += `<video src="/uploads/${file.filename}" controls style="max-width:100%;border-radius:8px;margin:8px 0;display:block;"></video>`;
+                    const src = file.tempUrl || `/uploads/${file.filename}`;
+                    html += `<img src="${src}" alt="عکس" loading="lazy" style="max-width:300px; border-radius:12px; margin:8px 0; cursor:pointer;">`;
                 }
             }
-            html += content.replace(/\n/g, '<br>');
+
+            html += (content || "").replace(/\n/g, '<br>');
             div.innerHTML = html;
             document.getElementById("messages").appendChild(div);
             div.scrollIntoView({behavior: "smooth"});
         }
 
-        // آپلود فایل
-        document.getElementById("fileInput").addEventListener("change", async (e) => {
+        // بزرگ‌نمایی
+        document.getElementById("messages").addEventListener("click", e => {
+            if (e.target.tagName === "IMG") {
+                document.getElementById("modalImage").src = e.target.src;
+                document.getElementById("imageModal").classList.add("active");
+            }
+        });
+
+        function closeModal() {
+            document.getElementById("imageModal").classList.remove("active");
+        }
+
+        // آپلود
+        document.getElementById("fileInput").addEventListener("change", e => {
             const file = e.target.files[0];
             if (!file) return;
             pendingFile = file;
@@ -105,24 +131,22 @@
             const preview = document.getElementById("filePreview");
             preview.innerHTML = "";
             const div = document.createElement("div");
-            div.style.position = "relative";
-            div.style.display = "inline-block";
+            div.style.position = "relative"; div.style.display = "inline-block"; div.style.margin = "8px";
 
-            if (file.type.startsWith("image/")) {
-                const img = document.createElement("img");
-                img.src = URL.createObjectURL(file);
-                div.appendChild(img);
-            } else if (file.type.startsWith("video/")) {
-                const video = document.createElement("video");
-                video.src = URL.createObjectURL(file);
-                video.controls = true;
-                div.appendChild(video);
-            }
+            const element = file.type.startsWith("image/") ? document.createElement("img") : document.createElement("video");
+            const tempUrl = URL.createObjectURL(file);
+            element.src = tempUrl;
+            element.style.maxHeight = "180px"; element.style.borderRadius = "12px";
+            if (file.type.startsWith("video/")) element.controls = true;
+            div.appendChild(element);
+
+            // ذخیره URL موقت
+            pendingFile.tempUrl = tempUrl;
 
             const removeBtn = document.createElement("button");
-            removeBtn.textContent = "×";
-            removeBtn.className = "remove-preview";
+            removeBtn.textContent = "×"; removeBtn.className = "remove-preview";
             removeBtn.onclick = () => {
+                URL.revokeObjectURL(tempUrl);
                 preview.innerHTML = "";
                 pendingFile = null;
                 document.getElementById("fileInput").value = "";
@@ -131,49 +155,69 @@
             preview.appendChild(div);
         }
 
-        // ارسال پیام
+        // ارسال نهایی — بدون دابلیکیت + درست کار کردن ویژن
         async function sendMessage() {
             const input = document.getElementById("msgInput");
             const text = input.value.trim();
-            if (!text && !pendingFile) return;
+            const hasFile = !!pendingFile;
+            const hasText = text.length > 0;
 
-            if (text) {
+            if (!hasFile && !hasText) return;
+
+            // یک آی‌دی منحصر به فرد برای این پیام
+            lastSentMessageId = Date.now() + Math.random();
+
+            // فقط یک بار نمایش بده (قبل از ارسال)
+            if (hasFile) {
+                addMessage("user", text || "📷 عکس ارسال شد", {
+                    filename: pendingFile.name,
+                    mimeType: pendingFile.type,
+                    tempUrl: pendingFile.tempUrl
+                });
+            } else {
                 addMessage("user", text);
-                send({action: "send_message", text});
             }
 
-            if (pendingFile) {
+            // ارسال به سرور
+            if (hasFile) {
                 const base64 = await fileToBase64(pendingFile);
                 send({
                     action: "send_file",
                     filename: pendingFile.name,
                     mimeType: pendingFile.type,
                     data: base64.split(',')[1],
-                    text: text || "لطفاً این عکس/فیلم رو تحلیل کن و برنامه بدنسازی مناسب بده"
+                    text: text,
+                    message_id: lastSentMessageId  
                 });
+
+                if (pendingFile.tempUrl) URL.revokeObjectURL(pendingFile.tempUrl);
                 document.getElementById("filePreview").innerHTML = "";
                 pendingFile = null;
+                document.getElementById("fileInput").value = "";
+            } else {
+                send({ action: "send_message", text, message_id: lastSentMessageId });
             }
 
             input.value = "";
-            document.getElementById("fileInput").value = "";
+            input.focus();
         }
 
         function fileToBase64(file) {
-            return new Promise(resolve => {
+            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
                 reader.readAsDataURL(file);
             });
         }
 
-        document.getElementById("sendBtn").addEventListener("click", sendMessage);
-        document.getElementById("msgInput").addEventListener("keydown", e => {
+        document.getElementById("sendBtn").onclick = e => { e.preventDefault(); sendMessage(); };
+        document.getElementById("msgInput").onkeydown = async e => {
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                sendMessage();
+                await sendMessage();
             }
-        });
+        };
     </script>
 </body>
 </html>
