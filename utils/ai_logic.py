@@ -5,7 +5,7 @@ from PIL import Image
 import hashlib
 import tempfile
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 # کش برای ذخیره تحلیل‌های عکس
 image_analysis_cache = {}
@@ -169,10 +169,10 @@ def generate_plan(chat_history):
             "تخصص ویژه‌ات تحلیل دقیق بدن از روی عکس و ساخت برنامه ۱۰۰٪ شخصی‌سازی‌شده است."
             "وقتی کاربر عکس آپلود کرده:"
             "- تحلیل دقیق بدن (درصد چربی، پوسچر، نقاط قوت/ضعف)"
-            "- برنامه تمرینی + تغذیه + ریکاوری کامل بده."
+            "نیازمندی کاربر رو بررسی کن و بر اساس نیاز مندی کاربر پاسخ بده."
             "همیشه فارسی و حرفه‌ای جواب بده."
         )
-        model = "qwen/qwen-2-vl-72b-instruct"
+        model = "meta-llama/llama-3.2-90b-vision-instruct"
         temperature = 0.4
         use_vision = True
     elif has_image and not user_said_no_photo and cached_analysis:
@@ -190,7 +190,12 @@ def generate_plan(chat_history):
     else:
         system_prompt = (
             "تو یک مربی حرفه‌ای بدنسازی و تغذیه هستی."
-            "فقط بر اساس متن کاربر، برنامه کامل تمرینی + تغذیه + ریکاوری بساز."
+            "نیازمندی کاربر را دقیق بررسی کن."
+            "بر اساس نیازمندی کاربر پاسخ بده."
+            "اهداف کاربر رو در نظر بگیر."
+            "اگر کاربر یک پیام کلی پرسید ، جزئیات نیازمندی کاربر رو بپرس"
+            "تعامل پذیر باش."
+            "پاسخ های دقیق و حرفه ای بده"
             "همیشه فارسی و حرفه‌ای جواب بده."
         )
         model = "openai/gpt-4o-mini"
