@@ -5,7 +5,7 @@ from PIL import Image
 import hashlib
 import tempfile
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 # کش برای ذخیره تحلیل‌های عکس
 image_analysis_cache = {}
@@ -172,7 +172,7 @@ def generate_plan(chat_history):
             "- برنامه تمرینی + تغذیه + ریکاوری کامل بده."
             "همیشه فارسی و حرفه‌ای جواب بده."
         )
-        model = "meta-llama/llama-3.2-90b-vision-instruct"
+        model = "qwen/qwen-2-vl-72b-instruct"
         temperature = 0.4
         use_vision = True
     elif has_image and not user_said_no_photo and cached_analysis:

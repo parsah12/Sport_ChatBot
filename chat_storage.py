@@ -42,7 +42,6 @@ def init_db(clear_existing=False):
 
 
 def delete_all_chats():
-    """پاک کردن تمام چت‌ها از دیتابیس"""
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM chats")
         conn.commit()
