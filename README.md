@@ -13,6 +13,3 @@ Enable a VPN
 Make sure you are connected to a VPN before running the app.
 
 Run the application
-Start the project using the command below:
-
-streamlit run app.py
