@@ -1,19 +1,19 @@
-# --- Dockerfile ---
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# کپی فایل‌ها
-COPY . /app
-
-# نصب پکیج‌ها
-# RUN pip install --no-cache-dir streamlit
-
-# (در صورت داشتن فایل requirements.txt)
+# کپی فایل requirements.txt و نصب وابستگی‌ها
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ایجاد پوشه‌های لازم
-RUN mkdir -p /app/db /app/chats
+# کپی سایر فایل‌های پروژه
+COPY . .
+
+# ایجاد پوشه‌های مورد نیاز
+RUN mkdir -p /app/chats /app/static/uploads
+
+# تنظیم متغیر محیطی برای اطمینان از ایجاد پوشه chats
+ENV PYTHONPATH=/app
 
 # اجرای برنامه
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["python", "app.py"]

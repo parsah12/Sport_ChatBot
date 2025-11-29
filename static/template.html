@@ -45,97 +45,72 @@
 
     <script>
         const ws = new WebSocket("ws://127.0.0.1:8000/ws");
-        let pendingFile = null;
-        let lastSentMessageId = null;
-        let titleGenerated = false;  // فقط یک بار عنوان بسازیم
+    let pendingFile = null;
+    let lastSentMessageId = null;
+    let titleGenerated = false;
 
-        ws.onmessage = (e) => {
-            const msg = JSON.parse(e.data);
-            if (msg.type === "chats") loadChats(msg.data);
-            if (msg.type === "chat") loadChat(msg);
-            if (msg.type === "new_message") {
-                if (msg.role === "assistant" || msg.id !== lastSentMessageId) {
-                    addMessage(msg.role || "bot", msg.content, msg.file);
-
-                    // فقط بعد از اولین جواب مربی، عنوان هوشمند بسازیم
-                    if (msg.role === "assistant" && !titleGenerated) {
-                        titleGenerated = true;
-                        setTimeout(requestSmartTitle, 1200); // کمی تأخیر برای اطمینان
-                    }
-                }
-            }
-            if (msg.type === "chat_updated") refresh();
-        };
-
-        ws.onopen = () => refresh();
-
-        function send(data) { ws.send(JSON.stringify(data)); }
-        function refresh() { send({action: "get_chats"}); send({action: "get_chat"}); }
-
-        // درخواست عنوان هوشمند از سرور (فقط یک بار)
-        function requestSmartTitle() {
-            const userMessages = Array.from(document.querySelectorAll('.msg.user'))
-                .map(el => {
-                    const text = el.textContent.replace('شما:', '').trim();
-                    return el.querySelector('img') ? "کاربر عکس آپلود کرد" + (text ? ": " + text : "") : text;
-                })
-                .filter(Boolean)
-                .join("\n");
-
-            if (!userMessages.trim()) return;
-
-            send({
-                action: "generate_smart_title",
-                user_messages: userMessages
-            });
+    ws.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        
+        if (msg.type === "chats") {
+            loadChats(msg.data);
         }
-
-        function loadChats(chats) {
-            const list = document.getElementById("chatList");
-            list.innerHTML = "";
-            chats.forEach((c, i) => {
-                const btn = document.createElement("button");
-                btn.className = "chat-btn";
-                if (i === chats.length - 1) btn.classList.add("active");
-
-                // فقط عنوانی که مدل ساخته رو نشون بده
-                const title = c.smart_title || c.title || "چت جدید";
-                btn.textContent = title;
-                btn.onclick = () => {
-                    titleGenerated = !!c.smart_title; // اگر قبلاً ساخته شده، دیگه نسازه
-                    send({action: "switch_chat", index: c.index});
-                };
-                list.appendChild(btn);
-            });
-        }
-
-        function loadChat(data) {
-            document.getElementById("chatTitle").textContent = "مربی ورزش هوشمند";
-
+        
+        if (msg.type === "chat" || msg.type === "chat_switched") {
+            // محتوای چت را بارگذاری کن اما عنوان را در هدر تغییر نده
             const box = document.getElementById("messages");
             box.innerHTML = "";
-            data.messages.forEach(m => addMessage(m.role, m.content, m.file));
-            box.scrollTop = box.scrollHeight;
-
-            // اگر قبلاً عنوان ساخته شده، دیگه نسازیم
-            titleGenerated = !!data.smart_title;
-        }
-
-        function addMessage(role, content, file = null) {
-            const div = document.createElement("div");
-            div.className = `msg ${role}`;
-            let html = `<strong>${role === 'user' ? 'شما' : 'مربی'}:</strong> `;
-            if (file && file.mimeType && file.mimeType.startsWith('image/')) {
-                const src = file.tempUrl || `/uploads/${file.filename}`;
-                html += `<img src="${src}" loading="lazy" style="max-width:300px; border-radius:12px; margin:8px 0; cursor:pointer;">`;
+            if (msg.messages) {
+                msg.messages.forEach(m => addMessage(m.role, m.content, m.file));
+                box.scrollTop = box.scrollHeight;
             }
-            html += (content || "").replace(/\n/g, '<br>');
-            div.innerHTML = html;
-            document.getElementById("messages").appendChild(div);
-            div.scrollIntoView({behavior: "smooth"});
+            titleGenerated = !!msg.smart_title;
         }
+        
+        if (msg.type === "new_message") {
+            addMessage(msg.role || "bot", msg.content, msg.file);
+        }
+    };
 
-        // بقیه کد (آپلود، ارسال، مودال) دقیقاً مثل قبلی
+    ws.onopen = () => {
+        send({action: "get_chats"});
+    };
+
+    function send(data) { 
+        ws.send(JSON.stringify(data)); 
+    }
+
+    function loadChats(chats) {
+        const list = document.getElementById("chatList");
+        list.innerHTML = "";
+        chats.forEach((c, i) => {
+            const btn = document.createElement("button");
+            btn.className = "chat-btn";
+            const title = c.smart_title || c.title || "چت جدید";
+            btn.textContent = title;
+            btn.onclick = () => {
+                titleGenerated = !!c.smart_title;
+                send({action: "switch_chat", index: i});
+            };
+            list.appendChild(btn);
+        });
+    }
+
+    // بقیه توابع بدون تغییر باقی می‌مانند
+    function addMessage(role, content, file = null) {
+        const div = document.createElement("div");
+        div.className = `msg ${role}`;
+        let html = `<strong>${role === 'user' ? 'شما' : 'مربی'}:</strong> `;
+        if (file && file.mimeType && file.mimeType.startsWith('image/')) {
+            const src = file.tempUrl || `/uploads/${file.filename}`;
+            html += `<img src="${src}" loading="lazy" style="max-width:300px; border-radius:12px; margin:8px 0; cursor:pointer;">`;
+        }
+        html += (content || "").replace(/\n/g, '<br>');
+        div.innerHTML = html;
+        document.getElementById("messages").appendChild(div);
+        div.scrollIntoView({behavior: "smooth"});
+    }
+
         document.getElementById("messages").addEventListener("click", e => {
             if (e.target.tagName === "IMG") {
                 document.getElementById("modalImage").src = e.target.src;
@@ -158,17 +133,21 @@
             const preview = document.getElementById("filePreview");
             preview.innerHTML = "";
             const div = document.createElement("div");
-            div.style.position = "relative"; div.style.display = "inline-block"; div.style.margin = "8px";
+            div.style.position = "relative"; 
+            div.style.display = "inline-block"; 
+            div.style.margin = "8px";
             const el = file.type.startsWith("image/") ? document.createElement("img") : document.createElement("video");
             const url = URL.createObjectURL(file);
             el.src = url;
-            el.style.maxHeight = "180px"; el.style.borderRadius = "12px";
+            el.style.maxHeight = "180px"; 
+            el.style.borderRadius = "12px";
             if (file.type.startsWith("video/")) el.controls = true;
             div.appendChild(el);
             pendingFile.tempUrl = url;
 
             const removeBtn = document.createElement("button");
-            removeBtn.textContent = "×"; removeBtn.className = "remove-preview";
+            removeBtn.textContent = "×"; 
+            removeBtn.className = "remove-preview";
             removeBtn.onclick = () => {
                 URL.revokeObjectURL(url);
                 preview.innerHTML = "";
@@ -205,15 +184,14 @@
                     filename: pendingFile.name,
                     mimeType: pendingFile.type,
                     data: base64.split(',')[1],
-                    text: text,
-                    message_id: lastSentMessageId
+                    text: text
                 });
                 if (pendingFile.tempUrl) URL.revokeObjectURL(pendingFile.tempUrl);
                 document.getElementById("filePreview").innerHTML = "";
                 pendingFile = null;
                 document.getElementById("fileInput").value = "";
             } else {
-                send({ action: "send_message", text, message_id: lastSentMessageId });
+                send({ action: "send_message", text: text });
             }
 
             input.value = "";

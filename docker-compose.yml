@@ -4,13 +4,15 @@ services:
   chat_saver:
     build: .
     container_name: chat_saver_app
-    image: chat-saver:latest
-    restart: always
+    restart: unless-stopped
     volumes:
-      - ./db:/app/db        # ذخیره دائمی دیتابیس SQLite
-      - ./chats:/app/chats  # پوشه چت‌ها (اختیاری)
-    working_dir: /app
-    command: ["python", "app.py"]
+      # ذخیره دائمی فایل‌های دیتابیس و آپلودها
+      - ./chats:/app/chats
+      - ./static/uploads:/app/static/uploads
+    ports:
+      - "8000:8000"  # پورت برنامه FastAPI
+    environment:
+      - PYTHONUNBUFFERED=1  # برای نمایش لاگ‌ها به صورت real-time
     networks:
       - chat_network
 

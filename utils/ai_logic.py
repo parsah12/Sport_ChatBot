@@ -161,7 +161,7 @@ def generate_plan(chat_history):
                     if image_hash in image_analysis_cache:
                         cached_analysis = image_analysis_cache[image_hash]
                         print("استفاده از تحلیل کش شده عکس")
-                    break
+                break
 
     if has_image and not user_said_no_photo and not cached_analysis and last_user_has_image:
         system_prompt = (
@@ -216,10 +216,10 @@ def generate_plan(chat_history):
 
             filepath = os.path.join("static", "uploads", msg["file"]["filename"])
             if os.path.exists(filepath):
-                print("شروع فشرده‌سازی و پردازش عکس...")
-                compressed_path = compress_image(filepath)
                 try:
-                    with open(compressed_path, "rb") as f:
+                    print(f"در حال پردازش عکس: {msg['file']['filename']}")
+                    # خواندن مستقیم فایل بدون فشرده‌سازی و بدون ایجاد فایل موقت
+                    with open(filepath, "rb") as f:
                         image_data = f.read()
 
                     img_b64 = base64.b64encode(image_data).decode("ascii")
@@ -228,17 +228,14 @@ def generate_plan(chat_history):
                         "type": "image_url",
                         "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}
                     })
-                    print("عکس با موفقیت اضافه شد")
-
-                    if compressed_path != filepath:
-                        try:
-                            os.remove(compressed_path)
-                        except:
-                            pass
+                    print("عکس با موفقیت به درخواست اضافه شد")
 
                 except Exception as e:
-                    content_list.append({"type": "text", "text": "عکس قابل پردازش نبود."})
                     print(f"[خطا در پردازش عکس] {e}")
+                    content_list.append({"type": "text", "text": "خطا در پردازش عکس. لطفاً دوباره امتحان کنید."})
+            else:
+                print(f"فایل عکس یافت نشد: {filepath}")
+                content_list.append({"type": "text", "text": "فایل عکس در دسترس نیست."})
 
         if content_list:
             messages.append({"role": role, "content": content_list})

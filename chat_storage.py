@@ -3,11 +3,9 @@ import os
 import json
 from datetime import datetime
 
-# مسیر پوشه و فایل دیتابیس
 DB_DIR = "chats"
 DB_PATH = os.path.join(DB_DIR, "chats.db")
 
-# اطمینان از وجود پوشه دیتابیس
 if not os.path.exists(DB_DIR):
     os.makedirs(DB_DIR)
 
@@ -17,7 +15,7 @@ def init_db(clear_existing=False):
             conn.execute("DROP TABLE IF EXISTS chats")
             conn.commit()
 
-        # ساخت جدول اصلی
+        # ایجاد جدول بدون شرط UNIQUE(title)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS chats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,12 +23,11 @@ def init_db(clear_existing=False):
                 smart_title TEXT,
                 messages TEXT NOT NULL,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(title)
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         """)
 
-        # اضافه کردن ستون smart_title اگر وجود نداشته باشه
+        # بررسی و اضافه کردن ستون smart_title در صورت عدم وجود
         try:
             conn.execute("SELECT smart_title FROM chats LIMIT 1")
         except sqlite3.OperationalError:
@@ -40,41 +37,40 @@ def init_db(clear_existing=False):
 
         conn.commit()
 
-
 def delete_all_chats():
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("DELETE FROM chats")
         conn.commit()
 
-
-# ذخیره یا بروزرسانی چت — حالا smart_title هم قبول می‌کنه
 def save_chat(messages, title, smart_title=None):
-    """
-    ذخیره یا بروزرسانی چت
-    اگر smart_title داده بشه، ذخیره میشه
-    """
+    """ایجاد یک چت جدید با عنوان منحصر به فرد"""
     data = json.dumps(messages, ensure_ascii=False)
-    now = datetime.now().isoformat()
-
+    now = datetime.now()
+    
+    # ایجاد عنوان منحصر به فرد برای هر چت جدید با استفاده از timestamp دقیق
+    unique_title = f"{title} {now.strftime('%Y%m%d_%H%M%S_%f')}"
+    
     with sqlite3.connect(DB_PATH) as conn:
         conn.execute("""
-            INSERT INTO chats (title, smart_title, messages, updated_at)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(title) DO UPDATE SET
-                messages = excluded.messages,
-                smart_title = excluded.smart_title,
-                updated_at = excluded.updated_at
-        """, (title, smart_title, data, now))
+            INSERT INTO chats (title, smart_title, messages, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?)
+        """, (unique_title, smart_title, data, now.isoformat(), now.isoformat()))
         conn.commit()
+    
+    return unique_title
 
+def create_new_chat():
+    """ایجاد یک چت جدید با عنوان منحصر به فرد"""
+    save_chat([], "چت جدید")
+    all_chats = load_all_chats()
+    return all_chats[0] if all_chats else None
 
-# بارگذاری همه چت‌ها — حالا smart_title رو هم برمی‌گردونه
 def load_all_chats():
     """بارگذاری همه چت‌ها به ترتیب آخرین بروزرسانی"""
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         rows = conn.execute("""
-            SELECT title, smart_title, messages, updated_at FROM chats
+            SELECT id, title, smart_title, messages, updated_at FROM chats
             ORDER BY updated_at DESC
         """).fetchall()
 
@@ -82,8 +78,9 @@ def load_all_chats():
     for row in rows:
         try:
             chats.append({
+                "id": row["id"],
                 "title": row["title"],
-                "smart_title": row["smart_title"],  # ممکنه None باشه
+                "smart_title": row["smart_title"],
                 "messages": json.loads(row["messages"]),
                 "updated_at": row["updated_at"]
             })
@@ -91,30 +88,23 @@ def load_all_chats():
             print(f"خطا در بارگذاری چت {row['title']}: {e}")
     return chats
 
+def update_chat(chat_id, messages, smart_title=None):
+    """بروزرسانی محتوای یک چت موجود"""
+    data = json.dumps(messages, ensure_ascii=False)
+    now = datetime.now().isoformat()
+    
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("""
+            UPDATE chats 
+            SET messages = ?, smart_title = ?, updated_at = ?
+            WHERE id = ?
+        """, (data, smart_title, now, chat_id))
+        conn.commit()
 
-# ایجاد چت جدید با عنوان موقت
-def create_new_chat():
-    """ایجاد یک چت جدید با عنوان موقت"""
-    save_chat([], "چت جدید")
-    all_chats = load_all_chats()
-    return all_chats[0] if all_chats else None
+def delete_chat(chat_id):
+    """حذف یک چت خاص"""
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.execute("DELETE FROM chats WHERE id = ?", (chat_id,))
+        conn.commit()
 
-
-# مقداردهی اولیه دیتابیس
 init_db()
-
-# تست: نمایش تمام چت‌ها
-if __name__ == "__main__":
-    chats = load_all_chats()
-
-    if not chats:
-        print("هیچ چتی در دیتابیس ذخیره نشده.")
-    else:
-        print(f"{len(chats)} چت پیدا شد:\n")
-        for i, chat in enumerate(chats, start=1):
-            display_title = chat["smart_title"] or chat["title"]
-            print(f"{i}. {display_title}")
-            print(f"   پیام‌ها: {len(chat['messages'])} | بروزرسانی: {chat['updated_at']}")
-            if chat["smart_title"]:
-                print(f"   هوشمند: {chat['smart_title']}")
-            print("-" * 50)
