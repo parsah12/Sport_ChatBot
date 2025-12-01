@@ -5,7 +5,7 @@ from PIL import Image
 import hashlib
 import tempfile
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = "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"
 
 # کش برای ذخیره تحلیل‌های عکس
 image_analysis_cache = {}
@@ -23,17 +23,14 @@ def compress_image(filepath, max_size=512, quality=30):
     try:
         img = Image.open(filepath)
         
-        # تبدیل به RGB اگر لازم باشد
         if img.mode in ("RGBA", "P", "LA"):
             img = img.convert("RGB")
         
         img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
         
-        # ایجاد فایل موقت
         fd, output_path = tempfile.mkstemp(suffix='.jpg')
         os.close(fd)
         
-        # ذخیره با کیفیت پایین
         img.save(output_path, "JPEG", quality=quality, optimize=True)
         
         file_size = os.path.getsize(output_path) / 1024
@@ -50,12 +47,8 @@ def compress_image(filepath, max_size=512, quality=30):
         return filepath
 
 
-# تابع جدید: تولید عنوان هوشمند (مثل ChatGPT و Grok)
+# تابع جدید: تولید عنوان هوشمند (فقط بگ‌ها اصلاح شده)
 def generate_smart_title_from_history(chat_history) -> str:
-    """
-    با توجه به کل تاریخچه چت، یک عنوان کوتاه و جذاب می‌سازه
-    فقط پیام‌های کاربر رو می‌فرسته به مدل
-    """
     user_messages = []
     has_image = False
 
@@ -74,7 +67,7 @@ def generate_smart_title_from_history(chat_history) -> str:
     if not user_messages:
         return "چت جدید"
 
-    context = "".join(user_messages[-8:])  # فقط ۸ پیام آخر کاربر
+    context = "".join(user_messages[-8:])
 
     prompt = f"""
 این پیام‌های کاربر در یک چت بدنسازی و تغذیه هست:
@@ -104,26 +97,29 @@ def generate_smart_title_from_history(chat_history) -> str:
             },
             timeout=25
         )
+        
         response.raise_for_status()
         title = response.json()["choices"][0]["message"]["content"].strip()
-        
-        # تمیزکاری
-        title = title.split("")[0].strip()
+
+        # اصلاح شده — دیگر split("") وجود ندارد
+        title = title.replace("\n", " ").strip()
+
         if title.lower().startswith(("عنوان", "title", "اسم")):
             title = title.split(":", 1)[-1].strip()
+
         title = title.strip('\'"“”`')
-        
+
         return title[:40] if len(title) > 40 else title
 
     except Exception as e:
         print(f"[خطا در تولید عنوان هوشمند] {e}")
-        # فال‌بک ساده
         if has_image:
             return "تحلیل عکس بدن"
         return "برنامه تمرینی و تغذیه"
 
 
-# تابع اصلی تولید برنامه (بدون تغییر در منطق قبلی)
+
+# تابع اصلی تولید برنامه — بدون تغییر پرامپت
 def generate_plan(chat_history):
     url = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -143,8 +139,9 @@ def generate_plan(chat_history):
             break
 
     no_photo_keywords = [
-        "عکس ندارم", "عکسی ندارم", "بدون عکس", "بدون تصویر", "no photo", "without photo",
-        "don't have photo", "عکس نمیتونم", "فقط برنامه", "just program", "برنامه بدون عکس"
+        "عکس ندارم", "عکسی ندارم", "بدون عکس", "بدون تصویر", "no photo",
+        "without photo", "don't have photo", "عکس نمیتونم", "فقط برنامه",
+        "just program", "برنامه بدون عکس"
     ]
     user_said_no_photo = any(kw in last_user_text.lower() for kw in no_photo_keywords)
 
@@ -218,7 +215,6 @@ def generate_plan(chat_history):
             if os.path.exists(filepath):
                 try:
                     print(f"در حال پردازش عکس: {msg['file']['filename']}")
-                    # خواندن مستقیم فایل بدون فشرده‌سازی و بدون ایجاد فایل موقت
                     with open(filepath, "rb") as f:
                         image_data = f.read()
 
@@ -233,9 +229,6 @@ def generate_plan(chat_history):
                 except Exception as e:
                     print(f"[خطا در پردازش عکس] {e}")
                     content_list.append({"type": "text", "text": "خطا در پردازش عکس. لطفاً دوباره امتحان کنید."})
-            else:
-                print(f"فایل عکس یافت نشد: {filepath}")
-                content_list.append({"type": "text", "text": "فایل عکس در دسترس نیست."})
 
         if content_list:
             messages.append({"role": role, "content": content_list})
@@ -275,8 +268,7 @@ def generate_plan(chat_history):
         return result
 
     except requests.exceptions.RequestException as e:
-        error = str(e).lower()
-        if "rate limit" in error:
+        if "rate limit" in str(e).lower():
             return "سرور شلوغه، چند لحظه دیگه دوباره امتحان کن."
         return "خطای اتصال به سرور."
 

@@ -102,6 +102,14 @@ async def ws_endpoint(websocket: WebSocket):
                 current_chat = all_chats[0] if all_chats else None
                 await broadcast_chats_list()
 
+
+            elif action == "ask_bot":
+                await websocket.send_json({
+                    "type": "status",
+                    "message": "🤖 در حال تحلیل و پردازش درخواست شما..."
+                })
+
+                
             elif action == "send_message":
                 text = data.get("text", "").strip()
                 if not text or not current_chat:
@@ -126,6 +134,8 @@ async def ws_endpoint(websocket: WebSocket):
                     "role": "bot",
                     "content": response
                 })
+
+
                 await broadcast_chats_list()
 
     except Exception as e:
