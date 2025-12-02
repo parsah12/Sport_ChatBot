@@ -6,37 +6,30 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
     <title>مربی هوشمند بدنسازی</title>
     <link rel="stylesheet" href="/static/style.css">
-    <style>
-        .msg img, .msg video { max-width: 300px; border-radius: 12px; margin: 8px 0; cursor: pointer; }
-        .file-preview img, .file-preview video { max-height: 180px; border-radius: 12px; }
-        .remove-preview { position: absolute; top: -8px; right: -8px; background: red; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 16px; }
-
-        /* ⭐ NEW ـــ استایل تایپینگ */
-        #typingIndicator {
-            display: none;
-            color: #555;
-            font-size: 14px;
-            margin: 10px 0;
-        }
-    </style>
 </head>
 <body>
     <div class="container">
-        <div class="sidebar">
-            <h2>چت‌ها</h2>
+        <!-- سایدبار کشویی -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>چت‌ها</h2>
+              
+            </div>
             <button onclick="send({action:'new_chat'})" class="btn">چت جدید</button>
             <button onclick="if(confirm('همه پاک بشن؟')) send({action:'clear_all'})" class="btn danger">پاک کردن همه</button>
             <hr>
             <div id="chatList" class="chat-list"></div>
         </div>
 
+        <!-- دکمه باز کردن سایدبار -->
+   
+
         <div class="chat-area">
             <div id="chatTitle" class="chat-title">مربی ورزش هوشمند</div>
-
-            <!-- ⭐ NEW ـــ نشانگر تایپینگ -->
-            <div id="typingIndicator">🤖 در حال پردازش پیام شما...</div>
-
             <div id="messages" class="messages"></div>
+
+            <!-- تایپینگ زیر پیام‌ها -->
+            <div id="typingIndicator">در حال پردازش پیام شما...</div>
 
             <div class="input-container">
                 <div id="filePreview" class="file-preview"></div>
@@ -58,10 +51,8 @@
     <script>
         const ws = new WebSocket("ws://127.0.0.1:8000/ws");
         let pendingFile = null;
-        let lastSentMessageId = null;
         let titleGenerated = false;
 
-        /* ⭐ NEW ـــ تابع‌های تایپینگ */
         function showTyping() {
             document.getElementById("typingIndicator").style.display = "block";
         }
@@ -71,8 +62,6 @@
 
         ws.onmessage = (e) => {
             const msg = JSON.parse(e.data);
-
-            // ⭐ NEW ـــ جواب اومد → تایپینگ مخفی میشه
             hideTyping();
 
             if (msg.type === "chats") loadChats(msg.data);
@@ -98,19 +87,67 @@
             ws.send(JSON.stringify(data));
         }
 
+        // تابع جدید: بارگذاری چت‌ها + کلیک راست برای حذف
         function loadChats(chats) {
             const list = document.getElementById("chatList");
             list.innerHTML = "";
             chats.forEach((c, i) => {
+                const div = document.createElement("div");
+                div.className = "chat-item";
+                div.dataset.index = i;
+
                 const btn = document.createElement("button");
                 btn.className = "chat-btn";
                 btn.textContent = c.smart_title || c.title || "چت جدید";
+
+                // کلیک چپ: سوئیچ به چت
                 btn.onclick = () => {
                     titleGenerated = !!c.smart_title;
                     send({action: "switch_chat", index: i});
                 };
-                list.appendChild(btn);
+
+                // کلیک راست: منوی حذف
+                div.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    showContextMenu(e, i);
+                };
+
+                div.appendChild(btn);
+                list.appendChild(div);
             });
+        }
+
+        // منوی کلیک راست
+        function showContextMenu(e, index) {
+            const oldMenu = document.getElementById("contextMenu");
+            if (oldMenu) oldMenu.remove();
+
+            const menu = document.createElement("div");
+            menu.id = "contextMenu";
+            menu.className = "context-menu";
+            menu.style.top = `${e.clientY}px`;
+            menu.style.left = `${e.clientX}px`;
+
+            const deleteOption = document.createElement("button");
+            deleteOption.textContent = "حذف این چت";
+            deleteOption.onclick = () => {
+                if (confirm("این چت حذف بشه؟")) {
+                    send({action: "delete_chat", index: index});
+                }
+                menu.remove();
+            };
+
+            menu.appendChild(deleteOption);
+            document.body.appendChild(menu);
+
+            // بستن منو با کلیک بیرون
+            const closeMenu = (ev) => {
+                if (!menu.contains(ev.target)) {
+                    menu.remove();
+                    document.removeEventListener("click", closeMenu);
+                }
+            };
+            setTimeout(() => document.addEventListener("click", closeMenu), 100);
         }
 
         function addMessage(role, content, file = null) {
@@ -127,6 +164,7 @@
             div.scrollIntoView({behavior: "smooth"});
         }
 
+        // بقیه کدها بدون تغییر
         document.getElementById("messages").addEventListener("click", e => {
             if (e.target.tagName === "IMG") {
                 document.getElementById("modalImage").src = e.target.src;
@@ -181,9 +219,6 @@
             const hasText = text.length > 0;
             if (!hasFile && !hasText) return;
 
-            lastSentMessageId = Date.now() + Math.random();
-
-            // ⭐ NEW ـــ در این لحظه تایپینگ نمایان شود
             showTyping();
 
             if (hasFile) {
@@ -233,6 +268,28 @@
                 await sendMessage();
             }
         };
+
+        // سایدبار کشویی
+        const sidebar = document.getElementById("sidebar");
+        const toggleBtn = document.getElementById("toggleSidebar");
+        const openBtn = document.getElementById("openSidebarBtn");
+
+        toggleBtn.onclick = () => {
+            sidebar.classList.toggle("closed");
+            openBtn.classList.toggle("active");
+        };
+
+        openBtn.onclick = () => {
+            sidebar.classList.remove("closed");
+            openBtn.classList.remove("active");
+        };
+
+        document.getElementById("messages").addEventListener("click", () => {
+            if (window.innerWidth <= 768 && !sidebar.classList.contains("closed")) {
+                sidebar.classList.add("closed");
+                openBtn.classList.add("active");
+            }
+        });
     </script>
 </body>
 </html>
