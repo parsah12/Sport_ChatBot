@@ -205,4 +205,4 @@ async def view_image(filename: str):
 if __name__ == "__main__":
     log("مربی هوشمند بدنسازی در حال اجرا...")
     log("آدرس: http://127.0.0.1:8000")
-    uvicorn.run(app, host="127.0.0.1", port=8000 , reload=True)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
