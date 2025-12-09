@@ -1,22 +1,25 @@
-version: "3.9"
+
 
 services:
-  chat_saver:
-    build: .
-    container_name: chat_saver_app
-    restart: unless-stopped
-    volumes:
-      # ذخیره دائمی فایل‌های دیتابیس و آپلودها
-      - ./chats:/app/chats
-      - ./static/uploads:/app/static/uploads
+  sport-chatbot:
+    container_name: sport-chatbot
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "8000:8000"  # پورت برنامه FastAPI
-    environment:
-      - PYTHONUNBUFFERED=1  # برای نمایش لاگ‌ها به صورت real-time
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - chats_volume:/app/chats
+      - uploads_volume:/app/static/uploads
+    restart: always
     networks:
-      - chat_network
+      - sport_network
 
 networks:
-  chat_network:
-    name: chat_network
-    driver: bridge
+  sport_network:
+
+volumes:
+  chats_volume:
+  uploads_volume:

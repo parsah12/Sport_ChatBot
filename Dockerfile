@@ -1,19 +1,31 @@
+FROM python:3.11-slim AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# کپی فایل requirements.txt و نصب وابستگی‌ها
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# کپی سایر فایل‌های پروژه
+COPY --from=builder /usr/local/lib/python3.11 /usr/local/lib/python3.11
+COPY --from=builder /usr/local/bin /usr/local/bin
+
 COPY . .
 
-# ایجاد پوشه‌های مورد نیاز
-RUN mkdir -p /app/chats /app/static/uploads
+RUN mkdir -p /app/chats && \
+    mkdir -p /app/static/uploads
 
-# تنظیم متغیر محیطی برای اطمینان از ایجاد پوشه chats
-ENV PYTHONPATH=/app
+RUN chmod -R 755 /app/chats /app/static/uploads
 
-# اجرای برنامه
+
 CMD ["python", "app.py"]
