@@ -202,7 +202,11 @@ async def view_image(filename: str):
         return FileResponse(file_path)
     return {"error": "File not found"}
 
+
+HOST = os.getenv("APP_HOST", "127.0.0.1")
+PORT = int(os.getenv("APP_PORT", "8000"))
+
 if __name__ == "__main__":
     log("مربی هوشمند بدنسازی در حال اجرا...")
-    log("آدرس: http://127.0.0.1:8000")
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    log(f"آدرس: http://{HOST}:{PORT}")
+    uvicorn.run(app, host=HOST, port=PORT)

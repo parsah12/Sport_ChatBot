@@ -27,5 +27,7 @@ RUN mkdir -p /app/chats && \
 
 RUN chmod -R 755 /app/chats /app/static/uploads
 
+EXPOSE 8000
+
 
 CMD ["python", "app.py"]
