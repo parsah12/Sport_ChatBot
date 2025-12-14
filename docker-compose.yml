@@ -2,6 +2,7 @@
 
 services:
   sport-chatbot:
+    image: sport-chatbot:latest
     container_name: sport-chatbot
     build:
       context: .
