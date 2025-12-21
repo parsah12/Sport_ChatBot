@@ -103,7 +103,7 @@ def generate_smart_title_from_history(chat_history) -> str:
                 "Content-Type": "application/json"
             },
             json={
-                "model": "openai/gpt-4o-mini",
+                "model": "google/gemma-2-9b-it:free",
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.4,
                 "max_tokens": 30
@@ -140,10 +140,13 @@ def generate_plan(chat_history):
 
     last_user_text = ""
     last_user_has_image = False
+    last_user_message = None  # برای ذخیره آخرین پیام کاربر کامل
+
     for msg in reversed(chat_history):
         if msg["role"] == "user":
+            last_user_message = msg  # پیام کامل کاربر آخر رو نگه دار
             if msg.get("content", "").strip():
-                last_user_text = msg["content"]
+                last_user_text = msg["content"].strip()
             if "file" in msg and msg["file"]["mimeType"].startswith("image/"):
                 last_user_has_image = True
             break
@@ -152,12 +155,16 @@ def generate_plan(chat_history):
         "عکس ندارم", "عکسی ندارم", "بدون عکس", "بدون تصویر", "no photo", "without photo",
         "don't have photo", "عکس نمیتونم", "فقط برنامه", "just program", "برنامه بدون عکس"
     ]
-    user_said_no_photo = any(kw in last_user_text.lower() for kw in no_photo_keywords)
+    user_said_no_photo = any(kw in last_user_text.lower() for kw in no_photo_keywords) if last_user_text else False
+
+    # تشخیص اینکه آیا آخرین پیام کاربر شامل عکس جدید هست یا نه
+    force_vision = last_user_has_image and not user_said_no_photo
 
     cached_analysis = None
     image_filepath = None
-    
-    if has_image and not user_said_no_photo:
+
+    # فقط اگر آخرین پیام شامل عکس نباشه، ممکنه از کش استفاده کنیم
+    if has_image and not force_vision:
         for msg in reversed(chat_history):
             if (msg["role"] == "user" and "file" in msg and 
                 msg["file"]["mimeType"].startswith("image/")):
@@ -166,40 +173,57 @@ def generate_plan(chat_history):
                     image_hash = get_image_hash(image_filepath)
                     if image_hash in image_analysis_cache:
                         cached_analysis = image_analysis_cache[image_hash]
-                        print("استفاده از تحلیل کش شده عکس")
+                        print("استفاده از تحلیل کش شده عکس (چون عکس جدید نیست)")
                     break
 
-    if has_image and not user_said_no_photo and not cached_analysis and last_user_has_image:
+    # تنظیم مدل و پرامپت بر اساس اینکه آخرین پیام شامل عکس هست یا نه
+    if force_vision:  # آخرین پیام کاربر شامل عکس هست → همیشه vision + عکس جدید بفرست
         system_prompt = (
-            "تو یک مربی حرفه‌ای بدنسازی و تغذیه با ۱۵+ سال تجربه در سطح جهانی هستی. "
-            "تخصص ویژه‌ات تحلیل دقیق بدن از روی عکس و ساخت برنامه ۱۰۰٪ شخصی‌سازی‌شده است."
-            "وقتی کاربر عکس آپلود کرده:"
-            "- تحلیل دقیق بدن (درصد چربی، پوسچر، نقاط قوت/ضعف)"
-            "- برنامه تمرینی + تغذیه + ریکاوری کامل بده."
-            "همیشه فارسی و حرفه‌ای جواب بده."
+            "تو مربی حرفه‌ای بدنسازی و تغذیه با بیش از ۱۵ سال تجربه جهانی هستی.\n"
+            "تخصصت تحلیل دقیق بدن از روی عکس و ساخت برنامه‌های ۱۰۰٪ شخصی‌سازی‌شده است.\n\n"
+            "رفتار تو:\n"
+            "۱. عکس کاربر را دقیق تحلیل کن (فقط بدن، بدون توصیف محیط یا لباس):\n"
+            "   - درصد چربی بدن تقریبی\n"
+            "   - وضعیت پوسچر و تعادل بدن\n"
+            "   - نقاط قوت و ضعف عضلانی\n\n"
+            "۲. با توجه به متن درخواست کاربر (اگر نوشته)، دقیقاً همان چیزی را بده که خواسته:\n"
+            "   - فقط برنامه غذایی خواست → فقط تغذیه\n"
+            "   - فقط برنامه تمرینی خواست → فقط تمرین + ریکاوری\n"
+            "   - هدف کلی یا برنامه کامل خواست → برنامه کامل تمرینی + تغذیه + ریکاوری\n"
+            "   - هدف مشخصی نگفت → تحلیل بدن را بده و بپرس هدفش چیه\n\n"
+            "همیشه فارسی، حرفه‌ای، انگیزشی و ساختارمند (با سرتیتر و لیست) جواب بده."
         )
-        model = "google/gemini-3-pro-image-preview"
-        temperature = 0.4
+        model = "nvidia/nemotron-nano-12b-v2-vl:free"  # پایدارتر و سریع‌تر از nemotron
+        temperature = 0.35
         use_vision = True
-    elif has_image and not user_said_no_photo and cached_analysis:
+
+    elif has_image and cached_analysis:  # عکس قبلاً بوده، حالا فقط متن جدید
         system_prompt = (
-            "تو یک مربی حرفه‌ای بدنسازی و تغذیه هستی."
-            "کاربر قبلاً عکس آپلود کرده و تو تحلیل زیر را انجام داده‌ای:"
-            f"{cached_analysis}"
-            "حالا بر اساس همین تحلیل و درخواست جدید کاربر، برنامه کامل بده."
-            "نیازی به تحلیل مجدد عکس نیست."
-            "همیشه فارسی جواب بده."
+            "تو مربی حرفه‌ای بدنسازی و تغذیه هستی.\n"
+            "تحلیل قبلی بدن کاربر (از عکس قبلی):\n"
+            f"{cached_analysis}\n\n"
+            "حالا بر اساس این تحلیل و درخواست جدید کاربر، دقیقاً همان چیزی را بده که خواسته:\n"
+            "- فقط برنامه غذایی خواست → فقط تغذیه\n"
+            "- فقط برنامه تمرینی خواست → فقط تمرین + ریکاوری\n"
+            "- هدف کلی یا برنامه کامل خواست → برنامه کامل بده\n"
+            "- هدف مشخصی نگفت → راهنمایی کن و بپرس\n\n"
+            "همیشه فارسی، حرفه‌ای و ساختارمند جواب بده."
         )
-        model = "tngtech/deepseek-r1t2-chimera:free"
+        model = "nex-agi/deepseek-v3.1-nex-n1:free"
         temperature = 0.4
         use_vision = False
-    else:
+
+    else:  # بدون عکس در کل چت
         system_prompt = (
-            "تو یک مربی حرفه‌ای بدنسازی و تغذیه هستی."
-            "فقط بر اساس متن کاربر، برنامه کامل تمرینی + تغذیه + ریکاوری بساز."
-            "همیشه فارسی و حرفه‌ای جواب بده."
+            "تو مربی حرفه‌ای بدنسازی و تغذیه هستی.\n\n"
+            "رفتار دقیق تو:\n"
+            "- فقط وقتی برنامه کامل می‌دهی که کاربر هدف واضحی گفته باشه.\n"
+            "- اگر فقط برنامه غذایی خواست → فقط تغذیه بده\n"
+            "- اگر فقط برنامه تمرینی خواست → فقط تمرین + ریکاوری بده\n"
+            "- اگر درخواست واضحی نداد → مشاوره بده و بپرس چی می‌خواد\n\n"
+            "همیشه فارسی، حرفه‌ای، انگیزشی و ساختارمند جواب بده."
         )
-        model = "tngtech/deepseek-r1t2-chimera:free"
+        model = "nex-agi/deepseek-v3.1-nex-n1:free"
         temperature = 0.4
         use_vision = False
 
@@ -212,12 +236,14 @@ def generate_plan(chat_history):
         if msg.get("content", "").strip():
             content_list.append({"type": "text", "text": msg["content"]})
 
-        if (use_vision and role == "user" and last_user_has_image and
-            "file" in msg and msg["file"]["mimeType"].startswith("image/")):
+        # فقط وقتی force_vision باشه (یعنی آخرین پیام شامل عکس) عکس رو اضافه کن
+        if (force_vision and role == "user" and 
+            "file" in msg and msg["file"]["mimeType"].startswith("image/") and
+            msg is last_user_message):  # فقط عکس آخرین پیام کاربر
 
             filepath = os.path.join("static", "uploads", msg["file"]["filename"])
             if os.path.exists(filepath):
-                print("شروع فشرده‌سازی و پردازش عکس...")
+                print("شروع فشرده‌سازی و پردازش عکس جدید...")
                 compressed_path = compress_image(filepath)
                 try:
                     with open(compressed_path, "rb") as f:
@@ -229,13 +255,10 @@ def generate_plan(chat_history):
                         "type": "image_url",
                         "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}
                     })
-                    print("عکس با موفقیت اضافه شد")
+                    print("عکس جدید با موفقیت به مدل ارسال شد")
 
                     if compressed_path != filepath:
-                        try:
-                            os.remove(compressed_path)
-                        except:
-                            pass
+                        os.remove(compressed_path)
 
                 except Exception as e:
                     content_list.append({"type": "text", "text": "عکس قابل پردازش نبود."})
@@ -250,10 +273,7 @@ def generate_plan(chat_history):
         "model": model,
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": 3000,
-        "top_p": 0.95,
-        "presence_penalty": 0.1,
-        "frequency_penalty": 0.1
+        "max_tokens": 2000,  # برای پاسخ‌های کامل‌تر
     }
 
     headers = {
@@ -268,13 +288,14 @@ def generate_plan(chat_history):
         response = requests.post(url, json=payload, headers=headers, timeout=180)
         response.raise_for_status()
         
-        result = response.json()["choices"][0]["message"]["content"]
+        result = response.json()["choices"][0]["message"]["content"].strip()
         
-        if (use_vision and image_filepath and os.path.exists(image_filepath)):
+        # فقط اگر force_vision بود و عکس جدید بود، تحلیل رو در کش ذخیره کن
+        if force_vision and image_filepath and os.path.exists(image_filepath):
             image_hash = get_image_hash(image_filepath)
             if image_hash:
                 image_analysis_cache[image_hash] = result
-                print("تحلیل عکس در کش ذخیره شد")
+                print("تحلیل جدید عکس در کش ذخیره شد")
         
         return result
 
@@ -283,7 +304,6 @@ def generate_plan(chat_history):
         if "rate limit" in error:
             return "سرور شلوغه، چند لحظه دیگه دوباره امتحان کن."
         return "خطای اتصال به سرور."
-
     except Exception as e:
         print(f"[خطای غیرمنتظره] {e}")
         return "خطای غیرمنتظره‌ای رخ داد. دوباره امتحان کن."
