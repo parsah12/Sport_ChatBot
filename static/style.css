@@ -38,7 +38,7 @@ html, body {
 
 /* سایدبار */
 .sidebar {
-    width: 250px;
+    width: 280px;
     height: 100%;
     background: rgba(15, 23, 42, 0.75);
    
@@ -79,21 +79,23 @@ html, body {
 
 .chat-list {
     flex: 1;
-    overflow-y: hidden;
+    overflow-y: scroll;
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 0 8px 20px 8px;
     direction: ltr;
     text-align: right;
+    height: 500px;
 }
 .chat-list > * { direction: rtl; }
 
 .chat-item {
     background: rgba(30, 41, 59, 0.6);
     border-radius: 16px;
-    overflow: hidden;
+    /* overflow: hidden; */
     transition: all 0.3s;
+    height: 50px;
 }
 .chat-btn {
     width: 100%;
