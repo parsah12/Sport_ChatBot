@@ -15,7 +15,6 @@ def init_db(clear_existing=False):
             conn.execute("DROP TABLE IF EXISTS chats")
             conn.commit()
 
-        # ایجاد جدول بدون شرط UNIQUE(title)
         conn.execute("""
             CREATE TABLE IF NOT EXISTS chats (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,7 +26,6 @@ def init_db(clear_existing=False):
             )
         """)
 
-        # بررسی و اضافه کردن ستون smart_title در صورت عدم وجود
         try:
             conn.execute("SELECT smart_title FROM chats LIMIT 1")
         except sqlite3.OperationalError:
@@ -47,7 +45,6 @@ def save_chat(messages, title, smart_title=None):
     data = json.dumps(messages, ensure_ascii=False)
     now = datetime.now()
     
-    # ایجاد عنوان منحصر به فرد برای هر چت جدید با استفاده از timestamp دقیق
     unique_title = f"{title} {now.strftime('%Y%m%d_%H%M%S_%f')}"
     
     with sqlite3.connect(DB_PATH) as conn:

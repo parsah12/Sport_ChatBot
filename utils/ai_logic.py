@@ -13,7 +13,6 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not OPENROUTER_API_KEY:
     raise ValueError("OPENROUTER_API_KEY را در فایل .env تنظیم کن")
 
-# کش برای ذخیره تحلیل‌های عکس
 image_analysis_cache = {}
 
 def get_image_hash(filepath):
@@ -29,17 +28,14 @@ def compress_image(filepath, max_size=512, quality=30):
     try:
         img = Image.open(filepath)
         
-        # تبدیل به RGB اگر لازم باشد
         if img.mode in ("RGBA", "P", "LA"):
             img = img.convert("RGB")
         
         img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
         
-        # ایجاد فایل موقت
         fd, output_path = tempfile.mkstemp(suffix='.jpg')
         os.close(fd)
         
-        # ذخیره با کیفیت پایین
         img.save(output_path, "JPEG", quality=quality, optimize=True)
         
         file_size = os.path.getsize(output_path) / 1024
@@ -56,7 +52,6 @@ def compress_image(filepath, max_size=512, quality=30):
         return filepath
 
 
-# تابع جدید: تولید عنوان هوشمند (مثل ChatGPT و Grok)
 def generate_smart_title_from_history(chat_history) -> str:
     """
     با توجه به کل تاریخچه چت، یک عنوان کوتاه و جذاب می‌سازه
@@ -80,7 +75,7 @@ def generate_smart_title_from_history(chat_history) -> str:
     if not user_messages:
         return "چت جدید"
 
-    context = "".join(user_messages[-8:])  # فقط ۸ پیام آخر کاربر
+    context = "".join(user_messages[-8:])  
 
     prompt = f"""
 این پیام‌های کاربر در یک چت بدنسازی و تغذیه هست:
@@ -113,7 +108,6 @@ def generate_smart_title_from_history(chat_history) -> str:
         response.raise_for_status()
         title = response.json()["choices"][0]["message"]["content"].strip()
         
-        # تمیزکاری
         title = title.split("")[0].strip()
         if title.lower().startswith(("عنوان", "title", "اسم")):
             title = title.split(":", 1)[-1].strip()
@@ -123,13 +117,11 @@ def generate_smart_title_from_history(chat_history) -> str:
 
     except Exception as e:
         print(f"[خطا در تولید عنوان هوشمند] {e}")
-        # فال‌بک ساده
         if has_image:
             return "تحلیل عکس بدن"
         return "برنامه تمرینی و تغذیه"
 
 
-# تابع اصلی تولید برنامه (بدون تغییر در منطق قبلی)
 def generate_plan(chat_history):
     url = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -140,11 +132,11 @@ def generate_plan(chat_history):
 
     last_user_text = ""
     last_user_has_image = False
-    last_user_message = None  # برای ذخیره آخرین پیام کاربر کامل
+    last_user_message = None 
 
     for msg in reversed(chat_history):
         if msg["role"] == "user":
-            last_user_message = msg  # پیام کامل کاربر آخر رو نگه دار
+            last_user_message = msg
             if msg.get("content", "").strip():
                 last_user_text = msg["content"].strip()
             if "file" in msg and msg["file"]["mimeType"].startswith("image/"):
@@ -157,13 +149,11 @@ def generate_plan(chat_history):
     ]
     user_said_no_photo = any(kw in last_user_text.lower() for kw in no_photo_keywords) if last_user_text else False
 
-    # تشخیص اینکه آیا آخرین پیام کاربر شامل عکس جدید هست یا نه
     force_vision = last_user_has_image and not user_said_no_photo
 
     cached_analysis = None
     image_filepath = None
 
-    # فقط اگر آخرین پیام شامل عکس نباشه، ممکنه از کش استفاده کنیم
     if has_image and not force_vision:
         for msg in reversed(chat_history):
             if (msg["role"] == "user" and "file" in msg and 
@@ -176,8 +166,7 @@ def generate_plan(chat_history):
                         print("استفاده از تحلیل کش شده عکس (چون عکس جدید نیست)")
                     break
 
-    # تنظیم مدل و پرامپت بر اساس اینکه آخرین پیام شامل عکس هست یا نه
-    if force_vision:  # آخرین پیام کاربر شامل عکس هست → همیشه vision + عکس جدید بفرست
+    if force_vision:
         system_prompt = (
             "تو مربی حرفه‌ای بدنسازی و تغذیه با بیش از ۱۵ سال تجربه جهانی هستی.\n"
             "تخصصت تحلیل دقیق بدن از روی عکس و ساخت برنامه‌های ۱۰۰٪ شخصی‌سازی‌شده است.\n\n"
@@ -193,11 +182,11 @@ def generate_plan(chat_history):
             "   - هدف مشخصی نگفت → تحلیل بدن را بده و بپرس هدفش چیه\n\n"
             "همیشه فارسی، حرفه‌ای، انگیزشی و ساختارمند (با سرتیتر و لیست) جواب بده."
         )
-        model = "nvidia/nemotron-nano-12b-v2-vl:free"  # پایدارتر و سریع‌تر از nemotron
+        model = "nvidia/nemotron-nano-12b-v2-vl:free"
         temperature = 0.35
         use_vision = True
 
-    elif has_image and cached_analysis:  # عکس قبلاً بوده، حالا فقط متن جدید
+    elif has_image and cached_analysis:  
         system_prompt = (
             "تو مربی حرفه‌ای بدنسازی و تغذیه هستی.\n"
             "تحلیل قبلی بدن کاربر (از عکس قبلی):\n"
@@ -213,7 +202,7 @@ def generate_plan(chat_history):
         temperature = 0.4
         use_vision = False
 
-    else:  # بدون عکس در کل چت
+    else:
         system_prompt = (
             "تو مربی حرفه‌ای بدنسازی و تغذیه هستی.\n\n"
             "رفتار دقیق تو:\n"
@@ -237,10 +226,9 @@ def generate_plan(chat_history):
         if msg.get("content", "").strip():
             content_list.append({"type": "text", "text": msg["content"]})
 
-        # فقط وقتی force_vision باشه (یعنی آخرین پیام شامل عکس) عکس رو اضافه کن
         if (force_vision and role == "user" and 
             "file" in msg and msg["file"]["mimeType"].startswith("image/") and
-            msg is last_user_message):  # فقط عکس آخرین پیام کاربر
+            msg is last_user_message):
 
             filepath = os.path.join("static", "uploads", msg["file"]["filename"])
             if os.path.exists(filepath):
@@ -274,7 +262,7 @@ def generate_plan(chat_history):
         "model": model,
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": 2000,  # برای پاسخ‌های کامل‌تر
+        "max_tokens": 2000,
     }
 
     headers = {
@@ -291,7 +279,6 @@ def generate_plan(chat_history):
         
         result = response.json()["choices"][0]["message"]["content"].strip()
         
-        # فقط اگر force_vision بود و عکس جدید بود، تحلیل رو در کش ذخیره کن
         if force_vision and image_filepath and os.path.exists(image_filepath):
             image_hash = get_image_hash(image_filepath)
             if image_hash:

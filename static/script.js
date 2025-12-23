@@ -36,7 +36,6 @@ function send(data) {
     ws.send(JSON.stringify(data));
 }
 
-// بارگذاری لیست چت‌ها + کلیک راست برای حذف
 function loadChats(chats) {
     const list = document.getElementById("chatList");
     list.innerHTML = "";
@@ -64,7 +63,6 @@ function loadChats(chats) {
     });
 }
 
-// منوی کلیک راست برای حذف چت
 function showContextMenu(e, index) {
     const oldMenu = document.getElementById("contextMenu");
     if (oldMenu) oldMenu.remove();
@@ -96,13 +94,11 @@ function showContextMenu(e, index) {
     setTimeout(() => document.addEventListener("click", closeMenu), 100);
 }
 
-// اضافه کردن پیام (بعد از ارسال، فقط نام فایل نمایش داده می‌شود)
 function addMessage(role, content, file = null) {
     const div = document.createElement("div");
     div.className = `msg ${role}`;
     let html = `<strong>${role === 'user' ? 'شما' : 'مربی'}:</strong> `;
 
-    // اگر فایل وجود داشته باشد، فقط نام فایل را نشان بده
     if (file) {
         html += `<div class="file-name">📎 ${file.filename}</div>`;
     }
@@ -113,7 +109,6 @@ function addMessage(role, content, file = null) {
     div.scrollIntoView({behavior: "smooth"});
 }
 
-// بزرگ‌نمایی تصاویر داخل پیام‌ها
 document.getElementById("messages").addEventListener("click", e => {
     if (e.target.tagName === "IMG") {
         document.getElementById("modalImage").src = e.target.src;
@@ -125,7 +120,6 @@ function closeModal() {
     document.getElementById("imageModal").classList.remove("active");
 }
 
-// پیش‌نمایش فایل بعد از انتخاب (قبل از ارسال)
 document.getElementById("fileInput").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
@@ -174,7 +168,6 @@ async function sendMessage() {
 
     showTyping();
 
-    // نمایش پیام کاربر (فقط نام فایل بعد از ارسال)
     addMessage("user", text, hasFile ? { filename: pendingFile.name } : null);
 
     if (hasFile) {
@@ -208,7 +201,6 @@ function fileToBase64(file) {
     });
 }
 
-// ارسال با دکمه و Enter (Shift+Enter برای خط جدید)
 document.getElementById("sendBtn").onclick = e => { e.preventDefault(); sendMessage(); };
 document.getElementById("msgInput").onkeydown = async e => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -217,14 +209,12 @@ document.getElementById("msgInput").onkeydown = async e => {
     }
 };
 
-// تنظیم خودکار ارتفاع textarea بر اساس محتوا
 const textarea = document.getElementById('msgInput');
 textarea.addEventListener('input', () => {
     textarea.style.height = 'auto';
     textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
 });
 
-// سایدبار کشویی (موبایل و دسکتاپ)
 const sidebar = document.getElementById("sidebar");
 const openBtn = document.getElementById("openSidebarBtn");
 
@@ -232,7 +222,6 @@ openBtn.onclick = () => {
     sidebar.classList.toggle("closed");
 };
 
-// بستن سایدبار با کلیک روی پیام‌ها در موبایل
 document.getElementById("messages").addEventListener("click", () => {
     if (window.innerWidth <= 768 && !sidebar.classList.contains("closed")) {
         sidebar.classList.add("closed");
